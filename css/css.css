@@ -1,0 +1,334 @@
+/* =======================================
+   🌱 VARIABLES & BASICS
+======================================= */
+
+:root {
+  --myapp-color-background: rgb(255, 255, 255);
+  --myapp-color-text: rgb(0, 0, 0);
+  --myapp-color-secondary-text: #666;
+}
+
+html, body {
+  background-color: var(--myapp-color-background);
+  margin: 0;
+  padding: 0;
+  font-family: "Avenir Medium", sans-serif;
+  color: var(--myapp-color-text);
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  overflow-x: hidden;
+}
+
+* {
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =======================================
+   🔝 HEADER & FOOTER
+======================================= */
+
+.mobile-footer,
+.mobile-header {
+  height: 60px;
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+  z-index: 1;
+}
+
+.mobile-footer {
+  border-top: 2px solid #e0700f;
+}
+
+.left-group,
+.right-group {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.hamburger,
+.tile,
+.add,
+.logout,
+.refresh {
+  width: 24px;
+  height: 24px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hamburger {
+  background-image: url("img/png/menu_FILL0_wght400_GRAD0_opsz24.png");
+}
+
+.medien {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.view-list .tile {
+  background-image: url("img/png/grid_view_FILL0_wght400_GRAD0_opsz24.png");
+}
+
+.view-grid .tile {
+  background-image: url("img/png/list_FILL0_wght400_GRAD0_opsz24.png");
+}
+
+.add {
+  background-image: url("img/png/add_FILL0_wght400_GRAD0_opsz24.png");
+}
+
+.logout {
+  background-image: url("img/png/logout_FILL0_wght400_GRAD0_opsz24.png");
+}
+
+.refresh {
+  background-image: url("img/png/sync_FILL0_wght400_GRAD0_opsz24.png");
+}
+
+/* =======================================
+   🧱 COMMON ELEMENTS
+======================================= */
+
+.song-picture {
+  width: 100px;
+  height: 100px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 6px;
+}
+
+.options-icon {
+  background-image: url("img/png/more_vert_FILL0_wght400_GRAD0_opsz24.png");
+  width: 20px;
+  height: 20px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.song-top-spacer {
+  height: 1rem;
+  background-color: #f0f0f0;
+  width: 100%;
+}
+
+/* =======================================
+   📄 LIST VIEW
+======================================= */
+
+.view-list .song-top-spacer {
+  flex-shrink: 0;
+}
+
+.view-list .song-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.view-list .song-box {
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  justify-content: space-between;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.view-list .song-box:first-of-type {
+  border-top: none;
+}
+
+.view-list .song-box:last-of-type {
+  border-bottom: 1px solid #ddd;
+}
+
+.view-list .left-elements {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.view-list .lorempixel {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.view-list .song-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-grow: 1;
+  margin-left: 1rem;
+  color: var(--myapp-color-secondary-text);
+}
+
+.view-list .song-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--myapp-color-secondary-text);
+}
+
+.view-list .song-artist {
+  font-size: 0.9rem;
+  color: var(--myapp-color-secondary-text);
+}
+
+.view-list .play-box {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.view-list .play-button {
+  width: 12px;
+  height: 12px;
+  background-image: url("img/png/play_arrow_FILL0_wght400_GRAD0_opsz24.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.view-list .play-number {
+  font-size: 0.75rem;
+  color: var(--myapp-color-secondary-text);
+}
+
+.view-list .right-elements {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 100%;
+  padding-left: 1rem;
+  gap: 0.3rem;
+}
+.view-list .options-icon {
+  margin-top: 1.5rem;
+}
+.view-list .song-release,
+.view-list .song-duration {
+  font-size: 0.75rem;
+  color: var(--myapp-color-secondary-text);
+}
+
+/* =======================================
+   🧱 GRID VIEW
+======================================= */
+
+.view-grid .song-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  justify-content: start;
+  align-content: start;
+}
+
+.view-grid .song-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 0.5rem;
+}
+
+
+.view-grid .song-picture {
+  width: 100%;
+  max-width: 120px;
+  aspect-ratio: 1 / 1;
+  background-size: cover;
+  background-position:center;
+  border-radius: 6px;
+  position: relative;
+}
+
+.view-grid .song-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 0.5rem;
+}
+
+
+.view-grid .right-elements {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+
+.view-grid .options-icon {
+  position: static;
+  width: 24px;
+  height: 24px;
+  background-image: url("img/png/more_vert_FILL0_wght400_GRAD0_opsz24.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 10;
+  pointer-events: auto;
+  /*filter: brightness(0) invert(1);  turns black to white */
+}
+
+.view-grid .song-top-spacer {
+  grid-column: 1 / -1;
+}
+
+.view-grid .lorempixel,
+.view-grid .song-title,
+.view-grid .song-artist,
+.view-grid .play-box,
+.view-grid .song-duration,
+.view-grid .song-release {
+  display: none;
+}
