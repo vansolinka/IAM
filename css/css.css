@@ -37,6 +37,7 @@ html, body {
   flex-direction: column;
 }
 
+
 /* =======================================
    🔝 HEADER & FOOTER
 ======================================= */
@@ -89,10 +90,14 @@ html, body {
 
 .view-list .tile {
   background-image: url("img/png/grid_view_FILL0_wght400_GRAD0_opsz24.png");
+  border: none;
+  cursor: pointer;
 }
 
 .view-grid .tile {
   background-image: url("img/png/list_FILL0_wght400_GRAD0_opsz24.png");
+  border: none;
+  cursor: pointer;
 }
 
 .add {
@@ -110,7 +115,22 @@ html, body {
 /* =======================================
    🧱 COMMON ELEMENTS
 ======================================= */
+.song-list{
+  transition: opacity 2s ease, background-color 0s;
+  opacity: 1;
+  background-color: var(--myapp-color-background);
+}
+.song-list.fade-out {
+  opacity: 0;
+  transition: opacity 2s ease; /* 2 Sekunden für Ausblenden */
+  background-color: var(--myapp-color-background);
+}
 
+.song-list.fade-in {
+  opacity: 1;
+  transition: opacity 1s ease; /* 1 Sekunde für Einblenden */
+  background-color: var(--myapp-color-background);
+}
 .song-picture {
   width: 100px;
   height: 100px;
