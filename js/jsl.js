@@ -43,7 +43,7 @@ document.addEventListener("songsLoaded", () => {
       if (clickedElement.classList.contains('options-icon')) {
         const confirmDelete = confirm(`Möchtest du diesen Eintrag wirklich löschen?\n\nTitel: ${title}\nBild-URL: ${imgUrl}`);
         if (confirmDelete) {
-          song.remove(); // ❌ entfernt das gesamte song-box Element
+          song.remove(); // entfernt das gesamte song-box Element
         }
         event.stopPropagation(); // verhindert, dass der normale Klick durchgeht
       }
