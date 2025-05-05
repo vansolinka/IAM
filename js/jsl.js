@@ -1,5 +1,3 @@
-console.log("📦 jsl.js geladen");
-
 // Umschalten der Ansicht
 const tileButton = document.querySelector('.tile');
 const appContainer = document.querySelector('.app-container');
@@ -23,7 +21,6 @@ tileButton.addEventListener('click', () => {
 
 // Wenn die Songs geladen wurden, erst dann Interaktion hinzufügen
 document.addEventListener("songsLoaded", () => {
-  console.log("🔄 Warte auf songsLoaded...");
 
   const songItems = document.querySelectorAll('.song-box');
   const optionsIcons = document.querySelectorAll('.options-icon');
@@ -44,10 +41,11 @@ document.addEventListener("songsLoaded", () => {
       const imgUrl = imgElement ? extractBackgroundImageUrl(imgElement.style.backgroundImage) : '';
 
       if (clickedElement.classList.contains('options-icon')) {
-        alert(`Titel: ${title}\nBild-URL: ${imgUrl}`);
-        event.stopPropagation();
-      } else {
-        alert(`Titel: ${title}`);
+        const confirmDelete = confirm(`Möchtest du diesen Eintrag wirklich löschen?\n\nTitel: ${title}\nBild-URL: ${imgUrl}`);
+        if (confirmDelete) {
+          song.remove(); // ❌ entfernt das gesamte song-box Element
+        }
+        event.stopPropagation(); // verhindert, dass der normale Klick durchgeht
       }
     });
   });
