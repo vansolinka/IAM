@@ -1,66 +1,60 @@
-// Elemente aus dem DOM holen
-const tileButton = document.querySelector('.tile'); // Button zum Umschalten der Ansicht
-const appContainer = document.querySelector('.app-container'); // Gesamte App-Hülle
-const mainContent = document.querySelector('.song-list'); // Hauptbereich mit den Songs
-const songItems = document.querySelectorAll('.song-box'); // Alle einzelnen Song-Elemente
-const optionsIcons = document.querySelectorAll('.options-icon'); // Alle Optionen-Icons
+console.log("📦 jsl.js geladen");
 
-// Optionen-Icons zugänglicher machen
-optionsIcons.forEach(icon => {
-  icon.setAttribute('role', 'button');   // Für Screenreader als Button lesbar
-  icon.setAttribute('tabindex', '0');     // Mit Tab-Taste erreichbar
-});
+// Umschalten der Ansicht
+const tileButton = document.querySelector('.tile');
+const appContainer = document.querySelector('.app-container');
+const mainContent = document.querySelector('.song-list');
 
-// Umschalten zwischen Grid- und Listenansicht
 tileButton.addEventListener('click', () => {
-  // Hauptbereich ausblenden (2 Sekunden)
   mainContent.classList.add('fade-out');
 
   setTimeout(() => {
-    // Ansicht wechseln (grid <-> list)
-    if (appContainer.classList.contains('view-grid')) {
-      appContainer.classList.remove('view-grid');
-      appContainer.classList.add('view-list');
-    } else {
-      appContainer.classList.remove('view-list');
-      appContainer.classList.add('view-grid');
-    }
+    appContainer.classList.toggle('view-grid');
+    appContainer.classList.toggle('view-list');
 
-    // Hauptbereich einblenden (1 Sekunde)
     mainContent.classList.remove('fade-out');
     mainContent.classList.add('fade-in');
 
     setTimeout(() => {
-      // Fade-in Klasse wieder entfernen
       mainContent.classList.remove('fade-in');
-    }, 1000); // Einblenden dauert 1 Sekunde
-  }, 2000); // Nach 2 Sekunden Ausblenden
+    }, 1000);
+  }, 2000);
 });
 
-// Klick-Events für alle Song-Elemente
-songItems.forEach(song => {
-  song.addEventListener('click', (event) => {
-    const clickedElement = event.target; // Was genau wurde angeklickt?
+// Wenn die Songs geladen wurden, erst dann Interaktion hinzufügen
+document.addEventListener("songsLoaded", () => {
+  console.log("🔄 Warte auf songsLoaded...");
 
-    const titleElement = song.querySelector('.song-title'); // Songtitel holen
-    const imgElement = song.querySelector('.song-picture'); // Bild-Hintergrund
+  const songItems = document.querySelectorAll('.song-box');
+  const optionsIcons = document.querySelectorAll('.options-icon');
 
-    const title = titleElement ? titleElement.textContent : '';
-    const imgUrl = imgElement ? extractBackgroundImageUrl(imgElement.style.backgroundImage) : '';
+  optionsIcons.forEach(icon => {
+    icon.setAttribute('role', 'button');
+    icon.setAttribute('tabindex', '0');
+  });
 
-    if (clickedElement.classList.contains('options-icon')) {
-      // Klick auf Optionen-Icon
-      alert(`Titel: ${title}\nBild-URL: ${imgUrl}`);
-      event.stopPropagation(); // verhindert normalen Listenklick
-    } else {
-      // Klick auf restliches Listenelement
-      alert(`Titel: ${title}`);
-    }
+  songItems.forEach(song => {
+    song.addEventListener('click', (event) => {
+      const clickedElement = event.target;
+
+      const titleElement = song.querySelector('.song-title');
+      const imgElement = song.querySelector('.song-picture');
+
+      const title = titleElement ? titleElement.textContent : '';
+      const imgUrl = imgElement ? extractBackgroundImageUrl(imgElement.style.backgroundImage) : '';
+
+      if (clickedElement.classList.contains('options-icon')) {
+        alert(`Titel: ${title}\nBild-URL: ${imgUrl}`);
+        event.stopPropagation();
+      } else {
+        alert(`Titel: ${title}`);
+      }
+    });
   });
 });
 
-// Hilfsfunktion um Background-Image URL aus style="background-image: url('...');" zu extrahieren
+// Bild-URL extrahieren
 function extractBackgroundImageUrl(backgroundImageStyle) {
   if (!backgroundImageStyle) return '';
-  return backgroundImageStyle.slice(5, -2); // entfernt 'url("...' und '")'
+  return backgroundImageStyle.slice(5, -2);
 }
