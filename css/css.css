@@ -353,3 +353,31 @@ html, body {
 .view-grid .song-release {
   display: none;
 }
+
+#action-menu {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  background-color: white;
+  box-shadow: 0 0 12px rgba(0,0,0,0.2);
+  padding: 1rem;
+  border-radius: 8px;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#action-menu.visible {
+  display: flex;
+}
+
+#action-menu .action-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.list-dimmed {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}

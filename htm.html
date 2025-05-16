@@ -27,22 +27,28 @@
 <main class="song-list">
     <div class="song-top-spacer"></div>
 </main>
-       <!-- Mobile Navigation Footer -->
-       <header class="mobile-footer">
-        <div class="left-group">
-          <div class="logout"></div>
-        </div>
-        <div class="right-group">
-            <div class="refresh"></div>
-        </div>
-      
-      </header>
-    </div>
-      <!-- add interaction control -->
-      <script type="application/javascript" src="js/jsr.js"></script>
-      <script type="application/javascript" src="js/jsl.js"></script>
 
-      <!-- add the "library" script wrapping XMLHttpRequest -->
-      <script type="application/javascript" src="js/lib/xhr.js"></script>
+<!-- Aktionsmenü direkt hier -->
+<div id="action-menu" class="hidden">
+  <div class="action-title"></div>
+  <button id="action-edit">Editieren</button>
+  <button id="action-delete">Löschen</button>
+</div>
+
+<!-- Mobile Navigation Footer -->
+<header class="mobile-footer">
+  <div class="left-group">
+    <div class="logout"></div>
+  </div>
+  <div class="right-group">
+    <div class="refresh"></div>
+  </div>
+</header>
+</div>
+
+<!-- JavaScript-Dateien – bleiben am Ende -->
+<script type="application/javascript" src="js/jsr.js"></script>
+<script type="application/javascript" src="js/jsl.js"></script>
+<script type="application/javascript" src="js/lib/xhr.js"></script>
 </body>
 </html>
