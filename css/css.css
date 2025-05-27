@@ -354,30 +354,113 @@ html, body {
   display: none;
 }
 
-#action-menu {
+/* Overlay für Popup */
+#overlay {
   position: fixed;
-  bottom: 80px;
-  right: 20px;
+  inset: 0;
+  background-color: rgba(0,0,0,0.3);
+  z-index: 99;
+  display: none;
+}
+
+#overlay.visible {
+  display: block;
+}
+
+/* Zentrales Popup-Fenster */
+#action-menu.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: white;
-  box-shadow: 0 0 12px rgba(0,0,0,0.2);
-  padding: 1rem;
-  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  border-radius: 12px;
   z-index: 100;
   display: none;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
+  min-width: 250px;
+  animation: fadeIn 0.25s ease-out;
 }
 
 #action-menu.visible {
   display: flex;
 }
 
-#action-menu .action-title {
+.action-title {
   font-weight: bold;
-  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  color: #222;
+  text-align: center;
 }
 
-.list-dimmed {
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
+
+.action-button {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: center;
+}
+
+.action-button.edit {
+  background-color: #eef6ff;
+  color: #225ea8;
+}
+
+.action-button.edit:hover {
+  background-color: #d6ebff;
+}
+
+.action-button.delete {
+  background-color: #fff0f0;
+  color: #b00020;
+}
+
+.action-button.delete:hover {
+  background-color: #ffdada;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+.edit-form input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.edit-form.hidden,
+.action-buttons.hidden {
+  display: none;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+

@@ -2,10 +2,8 @@
 function openMediaDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("MediaDB", 1);
-
     request.onerror = () => reject("Datenbank konnte nicht geöffnet werden.");
     request.onsuccess = () => resolve(request.result);
-
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       if (!db.objectStoreNames.contains("mediaItems")) {
@@ -19,7 +17,6 @@ async function loadMediaItemsFromDB() {
   const db = await openMediaDB();
   const tx = db.transaction("mediaItems", "readonly");
   const store = tx.objectStore("mediaItems");
-
   return new Promise((resolve, reject) => {
     const request = store.getAll();
     request.onsuccess = () => resolve(request.result);
@@ -76,13 +73,71 @@ function createSongBox(item) {
     const titleField = actionMenu.querySelector(".action-title");
 
     titleField.textContent = item.title;
-
     actionMenu.dataset.id = item.id;
     actionMenu.dataset.title = item.title;
     actionMenu.dataset.src = item.src;
 
+    document.getElementById("edit-title").value = item.title;
+    document.getElementById("edit-src").value = item.src;
+
     actionMenu.classList.add("visible");
-    document.querySelector(".song-list").classList.add("list-dimmed");
+    document.getElementById("overlay").classList.add("visible");
+
+    // Buttons/Forms reset
+    document.querySelector(".edit-form").classList.add("hidden");
+    document.querySelector(".action-buttons").classList.remove("hidden");
+
+    // 🟢 Editieren
+    const editBtn = document.getElementById("action-edit");
+    editBtn.onclick = () => {
+      document.querySelector(".action-buttons").classList.add("hidden");
+      document.querySelector(".edit-form").classList.remove("hidden");
+    };
+
+    // 🔴 Abbrechen
+    const cancelBtn = document.getElementById("cancel-edit");
+    cancelBtn.onclick = () => {
+      document.querySelector(".edit-form").classList.add("hidden");
+      document.querySelector(".action-buttons").classList.remove("hidden");
+    };
+
+    // 💾 Speichern
+    const saveBtn = document.getElementById("save-edit");
+    saveBtn.onclick = async () => {
+      const id = Number(actionMenu.dataset.id);
+      const newTitle = document.getElementById("edit-title").value;
+      const newSrc = document.getElementById("edit-src").value;
+
+      if (!newTitle || !newSrc) {
+        alert("Bitte beide Felder ausfüllen.");
+        return;
+      }
+
+      const db = await openMediaDB();
+      const tx = db.transaction("mediaItems", "readwrite");
+      const store = tx.objectStore("mediaItems");
+
+      const request = store.get(id);
+      request.onsuccess = () => {
+        const item = request.result;
+        if (!item) {
+          alert("Fehler: Objekt nicht gefunden.");
+          return;
+        }
+
+        item.title = newTitle;
+        item.src = newSrc;
+
+        store.put(item).onsuccess = () => {
+          closeActionMenu();
+          loadSongsFromDB();
+        };
+      };
+
+      request.onerror = () => {
+        alert("Fehler beim Lesen aus der Datenbank.");
+      };
+    };
   });
 
   return box;
@@ -102,15 +157,13 @@ async function loadSongsFromDB() {
   document.dispatchEvent(new Event("songsLoaded"));
 }
 
-// 🚀 Beim Seitenstart + Buttons initialisieren
+// 🚀 DOM vollständig geladen
 document.addEventListener("DOMContentLoaded", () => {
   loadSongsFromDB();
 
   const refreshBtn = document.querySelector('.refresh');
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
-      loadSongsFromDB();
-    });
+    refreshBtn.addEventListener('click', () => loadSongsFromDB());
   }
 
   const addButton = document.querySelector('.add');
@@ -118,17 +171,10 @@ document.addEventListener("DOMContentLoaded", () => {
     addButton.addEventListener('click', () => {
       const title = prompt("Titel des neuen MediaItems:");
       const src = prompt("Bild-URL des neuen MediaItems:");
-
-      if (!title || !src) {
-        alert("Titel und Bild-URL dürfen nicht leer sein.");
-        return;
-      }
+      if (!title || !src) return alert("Titel und Bild-URL dürfen nicht leer sein.");
 
       const heute = new Date();
-      const tag = String(heute.getDate()).padStart(2, '0');
-      const monat = String(heute.getMonth() + 1).padStart(2, '0');
-      const jahr = heute.getFullYear();
-      const datum = `${tag}.${monat}.${jahr}`;
+      const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
 
       const newItem = {
         title: title,
@@ -141,57 +187,32 @@ document.addEventListener("DOMContentLoaded", () => {
       addMediaItemToDB(newItem).then(() => loadSongsFromDB());
     });
   }
-});
 
-// 🧩 Aktionsmenü: Editieren
-document.getElementById("action-edit").addEventListener("click", async () => {
-  const menu = document.getElementById("action-menu");
-  const id = Number(menu.dataset.id);
-  const oldTitle = menu.dataset.title;
-  const oldSrc = menu.dataset.src;
+  // 🗑️ Löschen
+  const deleteBtn = document.getElementById("action-delete");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", () => {
+      const id = Number(document.getElementById("action-menu").dataset.id);
+      deleteMediaItemFromDB(id).then(() => {
+        closeActionMenu();
+        loadSongsFromDB();
+      });
+    });
+  }
 
-  const newTitle = prompt("Neuer Titel:", oldTitle);
-  const newSrc = prompt("Neue Bild-URL:", oldSrc);
-
-  if (!newTitle || !newSrc) return;
-
-  const db = await openMediaDB();
-  const tx = db.transaction("mediaItems", "readwrite");
-  const store = tx.objectStore("mediaItems");
-
-  const request = store.get(id);
-  request.onsuccess = () => {
-    const item = request.result;
-    item.title = newTitle;
-    item.src = newSrc;
-    store.put(item);
-    tx.oncomplete = () => {
-      closeActionMenu();
-      loadSongsFromDB();
-    };
-  };
-});
-
-// 🧩 Aktionsmenü: Löschen
-document.getElementById("action-delete").addEventListener("click", () => {
-  const id = Number(document.getElementById("action-menu").dataset.id);
-  deleteMediaItemFromDB(id).then(() => {
-    closeActionMenu();
-    loadSongsFromDB();
-  });
-});
-
-// Klick außerhalb des Menüs ➝ Menü schließen
-document.addEventListener("click", (e) => {
-  const menu = document.getElementById("action-menu");
-  if (menu.classList.contains("visible") && !menu.contains(e.target)) {
-    closeActionMenu();
+  // Overlay Klick schließt Menü
+  const overlay = document.getElementById("overlay");
+  if (overlay) {
+    overlay.addEventListener("click", () => closeActionMenu());
   }
 });
 
-// Menü schließen (Hilfsfunktion)
+// 🧹 Menü schließen
 function closeActionMenu() {
   const menu = document.getElementById("action-menu");
   menu.classList.remove("visible");
-  document.querySelector(".song-list").classList.remove("list-dimmed");
+  document.getElementById("overlay").classList.remove("visible");
+
+  document.querySelector(".edit-form").classList.add("hidden");
+  document.querySelector(".action-buttons").classList.remove("hidden");
 }

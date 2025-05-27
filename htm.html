@@ -1,54 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=1"/>
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>IAM Greenfield</title>
-    <!-- add style -->
-    <link rel="stylesheet" href="css/css.css"/>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=1"/>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>IAM Greenfield</title>
+  <!-- add style -->
+  <link rel="stylesheet" href="css/css.css"/>
 </head>
 <body>
   <div class="app-container view-grid">
-     <!-- Mobile Navigation Header -->
-     <header class="mobile-header">
-        <div class="left-group">
-          <div class="hamburger"></div>
-          <div class="medien">Medien</div>
+
+    <!-- Mobile Navigation Header -->
+    <header class="mobile-header">
+      <div class="left-group">
+        <div class="hamburger"></div>
+        <div class="medien">Medien</div>
+      </div>
+      <div class="right-group">
+        <button class="tile" aria-label="Change grid"></button>
+        <div class="add"></div>
+      </div>
+    </header>
+
+    <main class="song-list">
+      <div class="song-top-spacer"></div>
+    </main>
+
+    <!-- ✅ Overlay für Aktionsmenü (vor dem Menü!) -->
+    <div id="overlay" class="hidden"></div>
+
+    <!-- Aktionsmenü -->
+    <div id="action-menu" class="popup hidden">
+      <div class="action-title">Medien-Optionen</div>
+
+      <!-- Editieren/Löschen Buttons -->
+      <div class="action-buttons">
+        <button id="action-edit" class="action-button edit">✏️ Editieren</button>
+        <button id="action-delete" class="action-button delete">🗑️ Löschen</button>
+      </div>
+
+      <!-- Formular (nur bei Klick auf Editieren sichtbar) -->
+      <div class="edit-form hidden">
+        <input type="text" id="edit-title" placeholder="Neuer Titel" />
+        <input type="text" id="edit-src" placeholder="Neue Bild-URL" />
+        <div class="edit-actions">
+          <button id="save-edit" class="action-button edit">💾 Speichern</button>
+          <button id="cancel-edit" class="action-button delete">✖️ Abbrechen</button>
         </div>
-        <div class="right-group">
-            <button class="tile" aria-label="Change grid"></button>
-            <div class="add"></div>
-        </div>
-      
-      </header>
-<main class="song-list">
-    <div class="song-top-spacer"></div>
-</main>
+      </div>
+    </div>
 
-<!-- Aktionsmenü direkt hier -->
-<div id="action-menu" class="hidden">
-  <div class="action-title"></div>
-  <button id="action-edit">Editieren</button>
-  <button id="action-delete">Löschen</button>
-</div>
-
-<!-- Mobile Navigation Footer -->
-<header class="mobile-footer">
-  <div class="left-group">
-    <div class="logout"></div>
+    <!-- Mobile Navigation Footer -->
+    <header class="mobile-footer">
+      <div class="left-group">
+        <div class="logout"></div>
+      </div>
+      <div class="right-group">
+        <div class="refresh"></div>
+      </div>
+    </header>
   </div>
-  <div class="right-group">
-    <div class="refresh"></div>
-  </div>
-</header>
-</div>
 
-<!-- JavaScript-Dateien – bleiben am Ende -->
-<script type="application/javascript" src="js/jsr.js"></script>
-<script type="application/javascript" src="js/jsl.js"></script>
-<script type="application/javascript" src="js/lib/xhr.js"></script>
+  <!-- JavaScript-Dateien – bleiben am Ende -->
+  <script type="application/javascript" src="js/jsr.js"></script>
+  <script type="application/javascript" src="js/jsl.js"></script>
+  <script type="application/javascript" src="js/lib/xhr.js"></script>
 </body>
 </html>
