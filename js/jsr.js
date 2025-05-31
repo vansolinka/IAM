@@ -70,74 +70,23 @@ function createSongBox(item) {
     e.stopPropagation();
 
     const actionMenu = document.getElementById("action-menu");
-    const titleField = actionMenu.querySelector(".action-title");
+    const overlay = document.getElementById("overlay");
 
-    titleField.textContent = item.title;
     actionMenu.dataset.id = item.id;
     actionMenu.dataset.title = item.title;
     actionMenu.dataset.src = item.src;
 
-    document.getElementById("edit-title").value = item.title;
-    document.getElementById("edit-src").value = item.src;
+    actionMenu.querySelector(".action-title").textContent = item.title;
+    actionMenu.querySelector("#edit-title").value = item.title;
+    actionMenu.querySelector("#edit-src").value = item.src;
 
     actionMenu.classList.add("visible");
-    document.getElementById("overlay").classList.add("visible");
+    overlay.classList.add("visible");
 
-    // Buttons/Forms reset
-    document.querySelector(".edit-form").classList.add("hidden");
-    document.querySelector(".action-buttons").classList.remove("hidden");
-
-    // 🟢 Editieren
-    const editBtn = document.getElementById("action-edit");
-    editBtn.onclick = () => {
-      document.querySelector(".action-buttons").classList.add("hidden");
-      document.querySelector(".edit-form").classList.remove("hidden");
-    };
-
-    // 🔴 Abbrechen
-    const cancelBtn = document.getElementById("cancel-edit");
-    cancelBtn.onclick = () => {
-      document.querySelector(".edit-form").classList.add("hidden");
-      document.querySelector(".action-buttons").classList.remove("hidden");
-    };
-
-    // 💾 Speichern
-    const saveBtn = document.getElementById("save-edit");
-    saveBtn.onclick = async () => {
-      const id = Number(actionMenu.dataset.id);
-      const newTitle = document.getElementById("edit-title").value;
-      const newSrc = document.getElementById("edit-src").value;
-
-      if (!newTitle || !newSrc) {
-        alert("Bitte beide Felder ausfüllen.");
-        return;
-      }
-
-      const db = await openMediaDB();
-      const tx = db.transaction("mediaItems", "readwrite");
-      const store = tx.objectStore("mediaItems");
-
-      const request = store.get(id);
-      request.onsuccess = () => {
-        const item = request.result;
-        if (!item) {
-          alert("Fehler: Objekt nicht gefunden.");
-          return;
-        }
-
-        item.title = newTitle;
-        item.src = newSrc;
-
-        store.put(item).onsuccess = () => {
-          closeActionMenu();
-          loadSongsFromDB();
-        };
-      };
-
-      request.onerror = () => {
-        alert("Fehler beim Lesen aus der Datenbank.");
-      };
-    };
+    const editForm = actionMenu.querySelector(".edit-form");
+    const actionButtons = actionMenu.querySelector(".action-buttons");
+    editForm.classList.add("hidden");
+    actionButtons.classList.remove("hidden");
   });
 
   return box;
@@ -157,62 +106,125 @@ async function loadSongsFromDB() {
   document.dispatchEvent(new Event("songsLoaded"));
 }
 
-// 🚀 DOM vollständig geladen
+// 🚀 DOM geladen
 document.addEventListener("DOMContentLoaded", () => {
   loadSongsFromDB();
 
-  const refreshBtn = document.querySelector('.refresh');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => loadSongsFromDB());
-  }
+  document.querySelector(".refresh")?.addEventListener("click", () => loadSongsFromDB());
 
-  const addButton = document.querySelector('.add');
-  if (addButton) {
-    addButton.addEventListener('click', () => {
-      const title = prompt("Titel des neuen MediaItems:");
-      const src = prompt("Bild-URL des neuen MediaItems:");
-      if (!title || !src) return alert("Titel und Bild-URL dürfen nicht leer sein.");
+  document.querySelector(".add")?.addEventListener("click", () => {
+    document.getElementById("add-title").value = "";
+    document.getElementById("add-src").value = "";
+    document.getElementById("add-popup").classList.add("visible");
+    document.getElementById("overlay").classList.add("visible");
+  });
 
-      const heute = new Date();
-      const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
+  document.getElementById("add-confirm").addEventListener("click", () => {
+    const title = document.getElementById("add-title").value.trim();
+    const src = document.getElementById("add-src").value.trim();
 
-      const newItem = {
-        title: title,
-        owner: "userinput",
-        added: datum,
-        numOfTags: 0,
-        src: src
-      };
+    if (!title || !src) {
+      alert("Titel und Bild-URL dürfen nicht leer sein.");
+      return;
+    }
 
-      addMediaItemToDB(newItem).then(() => loadSongsFromDB());
+    const heute = new Date();
+    const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
+
+    const newItem = { title, owner: "userinput", added: datum, numOfTags: 0, src };
+
+    addMediaItemToDB(newItem).then(() => {
+      loadSongsFromDB();
+      closeAddPopup();
     });
-  }
+  });
 
-  // 🗑️ Löschen
-  const deleteBtn = document.getElementById("action-delete");
-  if (deleteBtn) {
-    deleteBtn.addEventListener("click", () => {
-      const id = Number(document.getElementById("action-menu").dataset.id);
-      deleteMediaItemFromDB(id).then(() => {
+  document.getElementById("add-cancel").addEventListener("click", () => closeAddPopup());
+
+  document.getElementById("overlay").addEventListener("click", () => {
+    closeAddPopup();
+    closeActionMenu();
+  });
+
+  // 📝 Bearbeiten
+  document.getElementById("action-edit").addEventListener("click", () => {
+    const menu = document.getElementById("action-menu");
+    const editForm = menu.querySelector(".edit-form");
+    const buttons = menu.querySelector(".action-buttons");
+
+    editForm.classList.remove("hidden");
+    buttons.classList.add("hidden");
+
+    document.getElementById("edit-title").value = menu.dataset.title || "";
+    document.getElementById("edit-src").value = menu.dataset.src || "";
+  });
+
+  document.getElementById("cancel-edit").addEventListener("click", () => {
+    const menu = document.getElementById("action-menu");
+    const editForm = menu.querySelector(".edit-form");
+    const buttons = menu.querySelector(".action-buttons");
+
+    editForm.classList.add("hidden");
+    buttons.classList.remove("hidden");
+  });
+
+  document.getElementById("save-edit").addEventListener("click", async () => {
+    const menu = document.getElementById("action-menu");
+    const id = Number(menu.dataset.id);
+    const newTitle = document.getElementById("edit-title").value.trim();
+    const newSrc = document.getElementById("edit-src").value.trim();
+
+    if (!newTitle || !newSrc) {
+      alert("Bitte beide Felder ausfüllen.");
+      return;
+    }
+
+    const db = await openMediaDB();
+    const tx = db.transaction("mediaItems", "readwrite");
+    const store = tx.objectStore("mediaItems");
+
+    const request = store.get(id);
+    request.onsuccess = () => {
+      const item = request.result;
+      if (!item) {
+        alert("Fehler: Objekt nicht gefunden.");
+        return;
+      }
+
+      item.title = newTitle;
+      item.src = newSrc;
+
+      store.put(item).onsuccess = () => {
         closeActionMenu();
         loadSongsFromDB();
-      });
-    });
-  }
+      };
+    };
 
-  // Overlay Klick schließt Menü
-  const overlay = document.getElementById("overlay");
-  if (overlay) {
-    overlay.addEventListener("click", () => closeActionMenu());
-  }
+    request.onerror = () => {
+      alert("Fehler beim Lesen aus der Datenbank.");
+    };
+  });
+
+  // 🗑️ Löschen
+  document.getElementById("action-delete").addEventListener("click", () => {
+    const id = Number(document.getElementById("action-menu").dataset.id);
+    deleteMediaItemFromDB(id).then(() => {
+      closeActionMenu();
+      loadSongsFromDB();
+    });
+  });
 });
 
-// 🧹 Menü schließen
+// 🔒 Popup schließen
+function closeAddPopup() {
+  document.getElementById("add-popup").classList.remove("visible");
+  document.getElementById("overlay").classList.remove("visible");
+}
+
 function closeActionMenu() {
   const menu = document.getElementById("action-menu");
   menu.classList.remove("visible");
   document.getElementById("overlay").classList.remove("visible");
-
-  document.querySelector(".edit-form").classList.add("hidden");
-  document.querySelector(".action-buttons").classList.remove("hidden");
+  menu.querySelector(".edit-form").classList.add("hidden");
+  menu.querySelector(".action-buttons").classList.remove("hidden");
 }

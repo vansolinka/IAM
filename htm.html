@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=1"/>
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>IAM Greenfield</title>
-  <!-- add style -->
-  <link rel="stylesheet" href="css/css.css"/>
+  <link rel="stylesheet" href="css/css.css" />
 </head>
 <body>
   <div class="app-container view-grid">
@@ -20,7 +19,8 @@
       </div>
       <div class="right-group">
         <button class="tile" aria-label="Change grid"></button>
-        <div class="add"></div>
+        <!-- Sichtbarer Add-Button -->
+        <div class="add" id="add-button" title="Neues Medium hinzufügen"></div>
       </div>
     </header>
 
@@ -28,20 +28,29 @@
       <div class="song-top-spacer"></div>
     </main>
 
-    <!-- ✅ Overlay für Aktionsmenü (vor dem Menü!) -->
+    <!-- Overlay -->
     <div id="overlay" class="hidden"></div>
 
-    <!-- Aktionsmenü -->
+    <!-- Popup: Neues Medium hinzufügen -->
+    <div id="add-popup" class="popup hidden">
+      <div class="action-title">Neues Medium hinzufügen</div>
+      <div class="edit-form">
+        <input type="text" id="add-title" placeholder="Titel eingeben" />
+        <input type="text" id="add-src" placeholder="Bild-URL eingeben" />
+        <div class="edit-actions">
+          <button id="add-confirm" class="action-button edit">💾 Hinzufügen</button>
+          <button id="add-cancel" class="action-button delete">✖️ Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup: Bearbeiten/Löschen -->
     <div id="action-menu" class="popup hidden">
       <div class="action-title">Medien-Optionen</div>
-
-      <!-- Editieren/Löschen Buttons -->
       <div class="action-buttons">
         <button id="action-edit" class="action-button edit">✏️ Editieren</button>
         <button id="action-delete" class="action-button delete">🗑️ Löschen</button>
       </div>
-
-      <!-- Formular (nur bei Klick auf Editieren sichtbar) -->
       <div class="edit-form hidden">
         <input type="text" id="edit-title" placeholder="Neuer Titel" />
         <input type="text" id="edit-src" placeholder="Neue Bild-URL" />
@@ -52,7 +61,7 @@
       </div>
     </div>
 
-    <!-- Mobile Navigation Footer -->
+    <!-- Mobile Footer -->
     <header class="mobile-footer">
       <div class="left-group">
         <div class="logout"></div>
@@ -63,9 +72,34 @@
     </header>
   </div>
 
-  <!-- JavaScript-Dateien – bleiben am Ende -->
-  <script type="application/javascript" src="js/jsr.js"></script>
-  <script type="application/javascript" src="js/jsl.js"></script>
-  <script type="application/javascript" src="js/lib/xhr.js"></script>
+  <!-- Mini-Script direkt für den Button -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const addBtn = document.getElementById("add-button");
+      const popup = document.getElementById("add-popup");
+      const overlay = document.getElementById("overlay");
+      const cancel = document.getElementById("add-cancel");
+
+      addBtn?.addEventListener("click", () => {
+        popup.classList.remove("hidden");
+        overlay.classList.add("visible");
+      });
+
+      cancel?.addEventListener("click", () => {
+        popup.classList.add("hidden");
+        overlay.classList.remove("visible");
+      });
+
+      overlay?.addEventListener("click", () => {
+        popup.classList.add("hidden");
+        overlay.classList.remove("visible");
+      });
+    });
+  </script>
+
+  <!-- JavaScript-Dateien -->
+  <script src="js/jsr.js"></script>
+  <script src="js/jsl.js"></script>
+  <script src="js/lib/xhr.js"></script>
 </body>
 </html>
