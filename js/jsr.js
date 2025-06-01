@@ -33,6 +33,11 @@ async function addMediaItemToDB(item) {
 }
 
 async function deleteMediaItemFromDB(id) {
+  if (!Number.isInteger(id)) {
+    console.error("❌ Ungültige ID übergeben an deleteMediaItemFromDB:", id);
+    return;
+  }
+
   const db = await openMediaDB();
   const tx = db.transaction("mediaItems", "readwrite");
   const store = tx.objectStore("mediaItems");
@@ -40,14 +45,17 @@ async function deleteMediaItemFromDB(id) {
   return tx.complete;
 }
 
+
 // 🧱 DOM-Erstellung für ein MediaItem
 function createSongBox(item) {
   const box = document.createElement("div");
   box.classList.add("song-box");
   box.dataset.id = item.id;
+  box.dataset.title = item.title;
+  box.dataset.src = item.src;
 
   box.innerHTML = `
-    <div class="song-picture" style="background-image: url('${item.src}');" alt="Song Cover"></div>
+    <div class="song-picture" style="background-image: url('${item.src}');"></div>
     <div class="song-info">
       <div class="left-elements">
         <div class="lorempixel">${item.owner}</div>
@@ -65,8 +73,35 @@ function createSongBox(item) {
     </div>
   `;
 
-  const optionsIcon = box.querySelector(".options-icon");
-  optionsIcon.addEventListener("click", (e) => {
+  // 📍 Klick auf die Box → Detailansicht anzeigen
+  box.addEventListener("click", (e) => {
+    if (e.target.closest(".options-icon")) return;
+
+    const detailView = document.getElementById("detail-view");
+    const detailTitle = document.getElementById("detail-title");
+    const detailImage = document.getElementById("detail-image");
+    const detailDelete = document.getElementById("detail-delete");
+
+    if (!detailView || !detailTitle || !detailImage || !detailDelete) {
+      console.warn("❌ Detailansicht-Elemente fehlen!");
+      return;
+    }
+
+    detailTitle.textContent = item.title;
+    detailImage.src = item.src;
+
+    // ✅ ID für Löschbutton korrekt setzen
+    detailDelete.setAttribute("data-id", item.id);
+
+    document.querySelector(".song-list")?.classList.add("hidden");
+    detailView.classList.remove("hidden");
+    detailView.classList.add("fade-in");
+
+    console.log("✅ Detailansicht geöffnet:", item.title);
+  });
+
+  // 📦 Options-Menü Klick (Popup)
+  box.querySelector(".options-icon").addEventListener("click", (e) => {
     e.stopPropagation();
 
     const actionMenu = document.getElementById("action-menu");
@@ -83,14 +118,16 @@ function createSongBox(item) {
     actionMenu.classList.add("visible");
     overlay.classList.add("visible");
 
-    const editForm = actionMenu.querySelector(".edit-form");
-    const actionButtons = actionMenu.querySelector(".action-buttons");
-    editForm.classList.add("hidden");
-    actionButtons.classList.remove("hidden");
+    actionMenu.querySelector(".edit-form").classList.add("hidden");
+    actionMenu.querySelector(".action-buttons").classList.remove("hidden");
   });
 
   return box;
 }
+
+
+
+
 
 // 🔄 MediaItems laden & anzeigen
 async function loadSongsFromDB() {
@@ -103,8 +140,10 @@ async function loadSongsFromDB() {
     songList.appendChild(box);
   });
 
+  // 🔥 Dieses Event war bisher nicht da
   document.dispatchEvent(new Event("songsLoaded"));
 }
+
 
 // 🚀 DOM geladen
 document.addEventListener("DOMContentLoaded", () => {
@@ -212,6 +251,12 @@ document.addEventListener("DOMContentLoaded", () => {
       closeActionMenu();
       loadSongsFromDB();
     });
+  });
+
+  // Zurück-Button in Detailansicht
+  document.getElementById("detail-back")?.addEventListener("click", () => {
+    document.getElementById("detail-view").classList.add("hidden");
+    document.querySelector(".song-list").classList.remove("hidden");
   });
 });
 

@@ -19,7 +19,6 @@
       </div>
       <div class="right-group">
         <button class="tile" aria-label="Change grid"></button>
-        <!-- Sichtbarer Add-Button -->
         <div class="add" id="add-button" title="Neues Medium hinzufügen"></div>
       </div>
     </header>
@@ -72,34 +71,33 @@
     </header>
   </div>
 
-  <!-- Mini-Script direkt für den Button -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const addBtn = document.getElementById("add-button");
-      const popup = document.getElementById("add-popup");
-      const overlay = document.getElementById("overlay");
-      const cancel = document.getElementById("add-cancel");
+  <!-- 🆕 Detailansicht für MediaItem -->
+  <div id="detail-view" class="hidden">
+    <header class="mobile-header">
+      <div class="left-group">
+        <div class="hamburger" id="detail-back"></div>
+        <div class="medien" id="detail-title"></div>
+      </div>
+      <div class="right-group">
+        <div class="deleteItem" id="detail-delete"></div>
+      </div>
+    </header>
 
-      addBtn?.addEventListener("click", () => {
-        popup.classList.remove("hidden");
-        overlay.classList.add("visible");
-      });
+    <main class="detail-main">
+      <img id="detail-image" src="" alt="Media" style="width: 100%; height: auto;" />
+    </main>
 
-      cancel?.addEventListener("click", () => {
-        popup.classList.add("hidden");
-        overlay.classList.remove("visible");
-      });
-
-      overlay?.addEventListener("click", () => {
-        popup.classList.add("hidden");
-        overlay.classList.remove("visible");
-      });
-    });
-  </script>
+    <footer class="mobile-footer">
+      <div class="left-group">
+        <div class="back" id="detail-footer-back"></div>
+      </div>
+      <div class="right-group"></div>
+    </footer>
+  </div>
 
   <!-- JavaScript-Dateien -->
-  <script src="js/jsr.js"></script>
   <script src="js/jsl.js"></script>
+  <script src="js/jsr.js"></script>
   <script src="js/lib/xhr.js"></script>
 </body>
 </html>
