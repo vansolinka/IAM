@@ -17,6 +17,7 @@
         <div class="hamburger"></div>
         <div class="medien">Medien</div>
       </div>
+
       <div class="right-group">
         <button class="tile" aria-label="Change grid"></button>
         <div class="add" id="add-button" title="Neues Medium hinzufügen"></div>
@@ -34,8 +35,21 @@
     <div id="add-popup" class="popup hidden">
       <div class="action-title">Neues Medium hinzufügen</div>
       <div class="edit-form">
-        <input type="text" id="add-title" placeholder="Titel eingeben" />
-        <input type="text" id="add-src" placeholder="Bild-URL eingeben" />
+      <div class="md-input-wrapper">
+        <input type="text" id="add-title" required />
+        <label for="add-title">Titel eingeben</label>
+      </div>
+
+      <div class="md-input-wrapper">
+        <input type="text" id="add-src" required />
+        <label for="add-src">Bild-URL eingeben</label>
+      </div>
+        <div class="md-file-wrapper">
+      <label for="add-file" class="md-file-label">📷 Bild auswählen</label>
+      <input type="file" id="add-file" accept="image/*" />
+      <span id="add-file-name" class="md-file-name">Kein Bild ausgewählt</span>
+    </div>
+    <img id="preview-add" class="image-preview" src="" alt="Vorschau" />
         <div class="edit-actions">
           <button id="add-confirm" class="action-button edit">💾 Hinzufügen</button>
           <button id="add-cancel" class="action-button delete">✖️ Abbrechen</button>
@@ -43,22 +57,41 @@
       </div>
     </div>
 
-    <!-- Popup: Bearbeiten/Löschen -->
-    <div id="action-menu" class="popup hidden">
-      <div class="action-title">Medien-Optionen</div>
-      <div class="action-buttons">
-        <button id="action-edit" class="action-button edit">✏️ Editieren</button>
-        <button id="action-delete" class="action-button delete">🗑️ Löschen</button>
-      </div>
-      <div class="edit-form hidden">
-        <input type="text" id="edit-title" placeholder="Neuer Titel" />
-        <input type="text" id="edit-src" placeholder="Neue Bild-URL" />
-        <div class="edit-actions">
-          <button id="save-edit" class="action-button edit">💾 Speichern</button>
-          <button id="cancel-edit" class="action-button delete">✖️ Abbrechen</button>
-        </div>
-      </div>
+<!-- Popup: Bearbeiten/Löschen -->
+<div id="action-menu" class="popup hidden">
+  <div class="action-title">Medien-Optionen</div>
+
+  <div class="action-buttons">
+    <button id="action-edit" class="action-button edit">✏️ Editieren</button>
+    <button id="action-delete" class="action-button delete">🗑️ Löschen</button>
+  </div>
+
+  <div class="edit-form hidden">
+    <div class="md-input-wrapper">
+      <input type="text" id="edit-title" required />
+      <label for="edit-title">Titel eingeben</label>
     </div>
+
+    <div class="md-input-wrapper">
+      <input type="text" id="edit-src" required />
+      <label for="edit-src">Bild-URL eingeben</label>
+    </div>
+
+    <div class="md-file-wrapper">
+      <label for="edit-file" class="md-file-label">📷 Bild auswählen</label>
+      <input type="file" id="edit-file" accept="image/*" />
+      <span id="edit-file-name" class="md-file-name">Kein Bild ausgewählt</span>
+    </div>
+
+    <img id="preview-edit" class="image-preview" src="" alt="Vorschau" />
+
+    <div class="edit-actions">
+      <button id="save-edit" class="action-button edit">💾 Speichern</button>
+      <button id="cancel-edit" class="action-button delete">✖️ Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 
     <!-- Mobile Footer -->
     <header class="mobile-footer">
@@ -99,5 +132,6 @@
   <script src="js/jsl.js"></script>
   <script src="js/jsr.js"></script>
   <script src="js/lib/xhr.js"></script>
+  <script src="js/fs-image-storage.js"></script>
 </body>
 </html>

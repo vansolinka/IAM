@@ -1,3 +1,4 @@
+
 // 📦 IndexedDB Setup & Zugriffsfunktionen
 function openMediaDB() {
   return new Promise((resolve, reject) => {
@@ -47,7 +48,7 @@ async function deleteMediaItemFromDB(id) {
 
 
 // 🧱 DOM-Erstellung für ein MediaItem
-function createSongBox(item) {
+async function createSongBox(item) {
   const box = document.createElement("div");
   box.classList.add("song-box");
   box.dataset.id = item.id;
@@ -55,7 +56,7 @@ function createSongBox(item) {
   box.dataset.src = item.src;
 
   box.innerHTML = `
-    <div class="song-picture" style="background-image: url('${item.src}');"></div>
+    <div class="song-picture"></div>
     <div class="song-info">
       <div class="left-elements">
         <div class="lorempixel">${item.owner}</div>
@@ -73,8 +74,23 @@ function createSongBox(item) {
     </div>
   `;
 
-  // 📍 Klick auf die Box → Detailansicht anzeigen
-  box.addEventListener("click", (e) => {
+  const pictureDiv = box.querySelector(".song-picture");
+
+if (item.src.startsWith("http")) {
+  pictureDiv.style.backgroundImage = `url('${item.src}')`;
+} else {
+  window.loadImageUrlFromFolder(item.src)
+    .then(url => {
+      pictureDiv.style.backgroundImage = `url('${url}')`;
+    })
+    .catch(err => {
+      console.warn("⚠️ Bild konnte nicht geladen werden:", err);
+      pictureDiv.style.backgroundImage = "url('img/png/image_not_supported.png')";
+    });
+}
+
+
+  box.addEventListener("click", async (e) => {
     if (e.target.closest(".options-icon")) return;
 
     const detailView = document.getElementById("detail-view");
@@ -88,10 +104,20 @@ function createSongBox(item) {
     }
 
     detailTitle.textContent = item.title;
-    detailImage.src = item.src;
-
-    // ✅ ID für Löschbutton korrekt setzen
     detailDelete.setAttribute("data-id", item.id);
+
+if (item.src.startsWith("http")) {
+  detailImage.src = item.src;
+} else {
+  window.loadImageUrlFromFolder(item.src)
+    .then(url => {
+      detailImage.src = url;
+    })
+    .catch(() => {
+      detailImage.src = "img/png/image_not_supported.png";
+    });
+}
+
 
     document.querySelector(".song-list")?.classList.add("hidden");
     detailView.classList.remove("hidden");
@@ -100,7 +126,6 @@ function createSongBox(item) {
     console.log("✅ Detailansicht geöffnet:", item.title);
   });
 
-  // 📦 Options-Menü Klick (Popup)
   box.querySelector(".options-icon").addEventListener("click", (e) => {
     e.stopPropagation();
 
@@ -135,10 +160,11 @@ async function loadSongsFromDB() {
   songList.innerHTML = "";
 
   const items = await loadMediaItemsFromDB();
-  items.forEach(item => {
-    const box = createSongBox(item);
-    songList.appendChild(box);
-  });
+  for (const item of items) {
+  const box = await createSongBox(item);
+  songList.appendChild(box);
+}
+
 
   // 🔥 Dieses Event war bisher nicht da
   document.dispatchEvent(new Event("songsLoaded"));
@@ -147,29 +173,61 @@ async function loadSongsFromDB() {
 
 // 🚀 DOM geladen
 document.addEventListener("DOMContentLoaded", () => {
-  loadSongsFromDB();
+  // 📁 Ordner-Button für File System Access API
+  const folderButton = document.getElementById("select-folder");
+  if (folderButton) {
+    folderButton.addEventListener("click", async () => {
+      try {
+        await getOrRequestImageDirectory(); // erlaubt durch Button-Klick
+        await loadSongsFromDB(); // neu laden nach Auswahl
+      } catch (err) {
+        alert("Ordnerzugriff abgelehnt oder abgebrochen.");
+        console.warn(err);
+      }
+    });
+  }
 
+  // 🔄 Reload-Button
   document.querySelector(".refresh")?.addEventListener("click", () => loadSongsFromDB());
 
+  // ➕ Hinzufügen-Button
   document.querySelector(".add")?.addEventListener("click", () => {
     document.getElementById("add-title").value = "";
     document.getElementById("add-src").value = "";
+    document.getElementById("add-file").value = "";
+    document.getElementById("preview-add").style.display = "none";
+
     document.getElementById("add-popup").classList.add("visible");
     document.getElementById("overlay").classList.add("visible");
   });
 
-  document.getElementById("add-confirm").addEventListener("click", () => {
+  // 💾 Hinzufügen bestätigen
+  document.getElementById("add-confirm").addEventListener("click", async () => {
     const title = document.getElementById("add-title").value.trim();
-    const src = document.getElementById("add-src").value.trim();
+    const urlInput = document.getElementById("add-src").value.trim();
+    const fileInput = document.getElementById("add-file");
 
-    if (!title || !src) {
-      alert("Titel und Bild-URL dürfen nicht leer sein.");
+    if (!title) {
+      alert("Bitte gib einen Titel ein.");
       return;
+    }
+
+    if ((!fileInput || fileInput.files.length === 0) && !urlInput) {
+      alert("Bitte gib eine Bild-URL ein oder lade eine Bilddatei hoch.");
+      return;
+    }
+
+    let src = "";
+    if (fileInput && fileInput.files.length > 0) {
+     const filename = await window.saveImageToFolder(fileInput.files[0], crypto.randomUUID() + "-" + fileInput.files[0].name);
+
+      src = filename;
+    } else {
+      src = urlInput;
     }
 
     const heute = new Date();
     const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
-
     const newItem = { title, owner: "userinput", added: datum, numOfTags: 0, src };
 
     addMediaItemToDB(newItem).then(() => {
@@ -178,14 +236,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // ❌ Abbrechen Hinzufügen
   document.getElementById("add-cancel").addEventListener("click", () => closeAddPopup());
 
+  // ✨ Overlay Klick → alles schließen
   document.getElementById("overlay").addEventListener("click", () => {
     closeAddPopup();
     closeActionMenu();
+    resetEditForm();
   });
 
-  // 📝 Bearbeiten
+  // ✏️ Edit starten
   document.getElementById("action-edit").addEventListener("click", () => {
     const menu = document.getElementById("action-menu");
     const editForm = menu.querySelector(".edit-form");
@@ -194,28 +255,53 @@ document.addEventListener("DOMContentLoaded", () => {
     editForm.classList.remove("hidden");
     buttons.classList.add("hidden");
 
+    const src = menu.dataset.src || "";
     document.getElementById("edit-title").value = menu.dataset.title || "";
-    document.getElementById("edit-src").value = menu.dataset.src || "";
+
+    if (!src.startsWith("data:")) {
+      document.getElementById("edit-src").value = src;
+    } else {
+      document.getElementById("edit-src").value = "";
+    }
+
+    const preview = document.getElementById("preview-edit");
+    preview.src = src;
+    preview.style.display = "block";
+    document.getElementById("edit-file").value = "";
   });
 
+  // ❌ Edit abbrechen
   document.getElementById("cancel-edit").addEventListener("click", () => {
     const menu = document.getElementById("action-menu");
-    const editForm = menu.querySelector(".edit-form");
-    const buttons = menu.querySelector(".action-buttons");
-
-    editForm.classList.add("hidden");
-    buttons.classList.remove("hidden");
+    menu.querySelector(".edit-form").classList.add("hidden");
+    menu.querySelector(".action-buttons").classList.remove("hidden");
+    resetEditForm();
   });
 
+  // 💾 Edit speichern
   document.getElementById("save-edit").addEventListener("click", async () => {
     const menu = document.getElementById("action-menu");
     const id = Number(menu.dataset.id);
     const newTitle = document.getElementById("edit-title").value.trim();
-    const newSrc = document.getElementById("edit-src").value.trim();
+    const newSrcInput = document.getElementById("edit-src").value.trim();
+    const fileInput = document.getElementById("edit-file");
 
-    if (!newTitle || !newSrc) {
-      alert("Bitte beide Felder ausfüllen.");
+    if (!newTitle) {
+      alert("Bitte gib einen Titel ein.");
       return;
+    }
+
+    if ((!fileInput || fileInput.files.length === 0) && !newSrcInput) {
+      alert("Bitte gib eine Bild-URL ein oder lade eine Bilddatei hoch.");
+      return;
+    }
+
+    let newSrc = "";
+    if (fileInput && fileInput.files.length > 0) {
+      const filename = await saveImageToDirectory(fileInput.files[0]);
+      newSrc = filename;
+    } else {
+      newSrc = newSrcInput;
     }
 
     const db = await openMediaDB();
@@ -253,12 +339,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Zurück-Button in Detailansicht
+  // 🔙 Zurück aus Detailansicht
   document.getElementById("detail-back")?.addEventListener("click", () => {
     document.getElementById("detail-view").classList.add("hidden");
     document.querySelector(".song-list").classList.remove("hidden");
   });
 });
+
 
 // 🔒 Popup schließen
 function closeAddPopup() {
@@ -273,3 +360,55 @@ function closeActionMenu() {
   menu.querySelector(".edit-form").classList.add("hidden");
   menu.querySelector(".action-buttons").classList.remove("hidden");
 }
+function setupImagePreview(fileInputId, previewImgId, titleInputId = null, urlInputId = null) {
+  const fileInput = document.getElementById(fileInputId);
+  const previewImg = document.getElementById(previewImgId);
+  const fileNameLabel = document.getElementById(fileInputId + "-name"); // <-- NEU
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    previewImg.style.display = "block";
+
+    if (fileNameLabel) fileNameLabel.textContent = file.name; // <-- NEU
+
+    if (urlInputId) {
+      document.getElementById(urlInputId).value = "";
+    }
+
+    if (titleInputId) {
+      const titleInput = document.getElementById(titleInputId);
+      if (titleInput.value.trim() === "") {
+        const filename = file.name.replace(/\.[^/.]+$/, "");
+        titleInput.value = filename;
+      }
+    }
+  });
+}
+
+
+setupImagePreview("add-file", "preview-add", "add-title", "add-src");
+setupImagePreview("edit-file", "preview-edit", "edit-title", "edit-src");
+
+function resetEditForm() {
+  const menu = document.getElementById("action-menu");
+
+  // Zurücksetzen aller Eingabefelder
+  document.getElementById("edit-title").value = menu.dataset.title || "";
+  document.getElementById("edit-src").value = menu.dataset.src || "";
+  document.getElementById("edit-file").value = "";
+
+  // Vorschau zurücksetzen
+  const preview = document.getElementById("preview-edit");
+  preview.src = menu.dataset.src || "";
+  preview.style.display = "block";
+
+  // Formular-Zustände zurücksetzen
+  menu.querySelector(".edit-form").classList.add("hidden");
+  menu.querySelector(".action-buttons").classList.remove("hidden");
+}
+
+

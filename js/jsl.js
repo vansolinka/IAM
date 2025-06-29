@@ -58,28 +58,32 @@ document.getElementById('detail-delete')?.addEventListener('click', () => {
   });
 });
 
-
-// Nach dem Laden der Songs: Interaktion aktivieren
-document.addEventListener("songsLoaded", () => {
+// 🆕 Nach dem Laden der Songs: Interaktion aktivieren und Bild über File System API laden
+document.addEventListener("songsLoaded", async () => {
   const songBoxes = document.querySelectorAll(".song-box");
 
-  songBoxes.forEach(box => {
-    box.addEventListener("click", () => {
-      
-
+  for (const box of songBoxes) {
+    box.addEventListener("click", async () => {
       const title = box.dataset.title;
-      const src = box.dataset.src;
+      const filename = box.dataset.src;
 
       const detailView = document.getElementById("detail-view");
       const detailImage = document.getElementById("detail-image");
       const detailTitle = document.getElementById("detail-title");
 
       detailTitle.textContent = title;
-      detailImage.src = src;
+
+      try {
+        const { loadImageUrlFromFolder } = await import('./fs-image-storage.js');
+        const url = await loadImageUrlFromFolder(filename);
+        detailImage.src = url;
+      } catch (e) {
+        console.error("❌ Bild konnte nicht geladen werden:", e);
+        detailImage.alt = "Bild fehlt oder kein Zugriff";
+      }
 
       detailView.classList.remove("hidden");
       document.querySelector(".song-list").classList.add("hidden");
     });
-  });
+  }
 });
-
