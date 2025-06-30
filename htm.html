@@ -31,31 +31,44 @@
     <!-- Overlay -->
     <div id="overlay" class="hidden"></div>
 
-    <!-- Popup: Neues Medium hinzufügen -->
-    <div id="add-popup" class="popup hidden">
-      <div class="action-title">Neues Medium hinzufügen</div>
-      <div class="edit-form">
-      <div class="md-input-wrapper">
-        <input type="text" id="add-title" required />
-        <label for="add-title">Titel eingeben</label>
-      </div>
+<!-- Popup: Neues Medium hinzufügen -->
+<div id="add-popup" class="popup hidden">
+  <div class="action-title">Neues Medium hinzufügen</div>
+  <div class="edit-form">
 
-      <div class="md-input-wrapper">
-        <input type="text" id="add-src" required />
-        <label for="add-src">Bild-URL eingeben</label>
-      </div>
-        <div class="md-file-wrapper">
+    <div class="md-input-wrapper">
+      <input type="text" id="add-title" required />
+      <label for="add-title">Titel eingeben</label>
+    </div>
+
+    <div class="md-input-wrapper">
+      <input type="text" id="add-src" required />
+      <label for="add-src">Bild-URL eingeben</label>
+    </div>
+
+    <!-- 🆕 Neues Auswahlfeld für Speicherort -->
+    <div class="md-input-wrapper">
+      <select id="add-storage-type" class="md-input">
+        <option value="local">📁 Lokal gespeichert</option>
+        <option value="remote">🌐 URL verwendet</option>
+      </select>
+    </div>
+
+    <div class="md-file-wrapper">
       <label for="add-file" class="md-file-label">📷 Bild auswählen</label>
       <input type="file" id="add-file" accept="image/*" />
       <span id="add-file-name" class="md-file-name">Kein Bild ausgewählt</span>
     </div>
+
     <img id="preview-add" class="image-preview" src="" alt="Vorschau" />
-        <div class="edit-actions">
-          <button id="add-confirm" class="action-button edit">💾 Hinzufügen</button>
-          <button id="add-cancel" class="action-button delete">✖️ Abbrechen</button>
-        </div>
-      </div>
+
+    <div class="edit-actions">
+      <button id="add-confirm" class="action-button edit">💾 Hinzufügen</button>
+      <button id="add-cancel" class="action-button delete">✖️ Abbrechen</button>
     </div>
+
+  </div>
+</div>
 
 <!-- Popup: Bearbeiten/Löschen -->
 <div id="action-menu" class="popup hidden">
@@ -76,6 +89,12 @@
       <input type="text" id="edit-src" required />
       <label for="edit-src">Bild-URL eingeben</label>
     </div>
+<div class="md-input-wrapper">
+  <select id="edit-storage-type" class="md-input" disabled>
+    <option value="local">📁 Lokal gespeichert</option>
+    <option value="remote">🌐 URL verwendet</option>
+  </select>
+</div>
 
     <div class="md-file-wrapper">
       <label for="edit-file" class="md-file-label">📷 Bild auswählen</label>
@@ -99,6 +118,7 @@
         <div class="logout"></div>
       </div>
       <div class="right-group">
+        <button id="toggle-storage-filter" class="storage-toggle-button">📦 Alle</button>
         <div class="refresh"></div>
       </div>
     </header>

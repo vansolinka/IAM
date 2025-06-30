@@ -30,7 +30,7 @@ function extractBackgroundImageUrl(style) {
 
 // Zurück zur Listenansicht
 function closeDetailView() {
-  console.log("🚫 Detailansicht wird nicht geschlossen – Testmodus");
+  //console.log("🚫 Detailansicht wird nicht geschlossen – Testmodus");
   const detailView = document.getElementById('detail-view');
   detailView.classList.add('fade-out');
   setTimeout(() => {
@@ -78,7 +78,7 @@ document.addEventListener("songsLoaded", async () => {
         const url = await loadImageUrlFromFolder(filename);
         detailImage.src = url;
       } catch (e) {
-        console.error("❌ Bild konnte nicht geladen werden:", e);
+        //console.error("❌ Bild konnte nicht geladen werden:", e);
         detailImage.alt = "Bild fehlt oder kein Zugriff";
       }
 

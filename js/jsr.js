@@ -1,4 +1,4 @@
-
+let storageFilterMode = "all"; // Mögliche Werte: all, local, remote
 // 📦 IndexedDB Setup & Zugriffsfunktionen
 function openMediaDB() {
   return new Promise((resolve, reject) => {
@@ -85,7 +85,7 @@ if (item.src.startsWith("http")) {
     })
     .catch(err => {
       console.warn("⚠️ Bild konnte nicht geladen werden:", err);
-      pictureDiv.style.backgroundImage = "url('img/png/image_not_supported.png')";
+      //pictureDiv.style.backgroundImage = "url('img/png/image_not_supported.png')";
     });
 }
 
@@ -114,7 +114,7 @@ if (item.src.startsWith("http")) {
       detailImage.src = url;
     })
     .catch(() => {
-      detailImage.src = "img/png/image_not_supported.png";
+      //detailImage.src = "img/png/image_not_supported.png";
     });
 }
 
@@ -160,13 +160,19 @@ async function loadSongsFromDB() {
   songList.innerHTML = "";
 
   const items = await loadMediaItemsFromDB();
-  for (const item of items) {
-  const box = await createSongBox(item);
-  songList.appendChild(box);
-}
 
+  // 🧠 Filter anwenden
+  const filtered = items.filter(item => {
+    if (storageFilterMode === "local") return item.owner === "local";
+    if (storageFilterMode === "remote") return item.owner === "remote";
+    return true; // "all"
+  });
 
-  // 🔥 Dieses Event war bisher nicht da
+  for (const item of filtered) {
+    const box = await createSongBox(item);
+    songList.appendChild(box);
+  }
+
   document.dispatchEvent(new Event("songsLoaded"));
 }
 
@@ -203,38 +209,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 💾 Hinzufügen bestätigen
   document.getElementById("add-confirm").addEventListener("click", async () => {
-    const title = document.getElementById("add-title").value.trim();
-    const urlInput = document.getElementById("add-src").value.trim();
-    const fileInput = document.getElementById("add-file");
+    console.log("📦 Speicherort gewählt:", document.getElementById("add-storage-type").value);
 
-    if (!title) {
-      alert("Bitte gib einen Titel ein.");
-      return;
-    }
+  const title = document.getElementById("add-title").value.trim();
+  const urlInput = document.getElementById("add-src").value.trim();
+  const fileInput = document.getElementById("add-file");
+  const storageType = document.getElementById("add-storage-type").value;
 
-    if ((!fileInput || fileInput.files.length === 0) && !urlInput) {
-      alert("Bitte gib eine Bild-URL ein oder lade eine Bilddatei hoch.");
-      return;
-    }
+  if (!title) {
+    alert("Bitte gib einen Titel ein.");
+    return;
+  }
 
-    let src = "";
-    if (fileInput && fileInput.files.length > 0) {
-     const filename = await window.saveImageToFolder(fileInput.files[0], crypto.randomUUID() + "-" + fileInput.files[0].name);
+  if ((!fileInput || fileInput.files.length === 0) && !urlInput) {
+    alert("Bitte gib eine Bild-URL ein oder lade eine Bilddatei hoch.");
+    return;
+  }
 
+  let src = "";
+
+
+  // 📁 Datei wurde hochgeladen
+  if (fileInput && fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+
+    if (storageType === "local") {
+      console.log("📁 Lokale Speicherung wird versucht...");
+      const filename = await window.saveImageToFolder(
+        file,
+        crypto.randomUUID() + "-" + file.name
+      );
       src = filename;
-    } else {
-      src = urlInput;
+    } else if (storageType === "remote") {
+      console.log("🌐 Remote-Upload wird versucht...");
+      try {
+        src = await uploadImageToRemoteServer(file);
+      } catch (err) {
+        alert("❌ Fehler beim Hochladen: " + err.message);
+        return;
+      }
     }
+  } else {
+    // 🌐 Nur URL wurde eingegeben
+    console.log("🌐 Nur URL wird verwendet, kein Upload nötig.");
+    src = urlInput;
+  }
 
-    const heute = new Date();
-    const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
-    const newItem = { title, owner: "userinput", added: datum, numOfTags: 0, src };
+  const heute = new Date();
+  const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
+  const newItem = { title, owner: storageType, added: datum, numOfTags: 0, src };
 
-    addMediaItemToDB(newItem).then(() => {
-      loadSongsFromDB();
-      closeAddPopup();
-    });
+  addMediaItemToDB(newItem).then(() => {
+    loadSongsFromDB();
+    closeAddPopup();
   });
+});
+
 
   // ❌ Abbrechen Hinzufügen
   document.getElementById("add-cancel").addEventListener("click", () => closeAddPopup());
@@ -247,28 +277,74 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ✏️ Edit starten
-  document.getElementById("action-edit").addEventListener("click", () => {
-    const menu = document.getElementById("action-menu");
-    const editForm = menu.querySelector(".edit-form");
-    const buttons = menu.querySelector(".action-buttons");
+document.getElementById("action-edit").addEventListener("click", () => {
+  const menu = document.getElementById("action-menu");
+  const editForm = menu.querySelector(".edit-form");
+  const buttons = menu.querySelector(".action-buttons");
 
-    editForm.classList.remove("hidden");
-    buttons.classList.add("hidden");
+  editForm.classList.remove("hidden");
+  buttons.classList.add("hidden");
 
-    const src = menu.dataset.src || "";
-    document.getElementById("edit-title").value = menu.dataset.title || "";
+  const src = menu.dataset.src || "";
+  const titleField = document.getElementById("edit-title");
+  const srcField = document.getElementById("edit-src");
+  const storageSelect = document.getElementById("edit-storage-type");
+  const preview = document.getElementById("preview-edit");
+  const fileInput = document.getElementById("edit-file");
 
-    if (!src.startsWith("data:")) {
-      document.getElementById("edit-src").value = src;
-    } else {
-      document.getElementById("edit-src").value = "";
-    }
+  titleField.value = menu.dataset.title || "";
 
-    const preview = document.getElementById("preview-edit");
-    preview.src = src;
-    preview.style.display = "block";
-    document.getElementById("edit-file").value = "";
+  // Quelle in URL-Feld setzen (nur wenn nicht base64)
+  const isRemote = src.startsWith("http");
+  srcField.value = isRemote ? src : "";
+
+  // Speicherort anzeigen (remote/local)
+  if (storageSelect) {
+    storageSelect.disabled = true; // Optional wieder aktivierbar bei Bedarf
+    storageSelect.value = isRemote ? "remote" : "local";
+    console.log("📦 Speicherort gesetzt auf:", storageSelect.value);
+  }
+
+  preview.src = src;
+  preview.style.display = "block";
+  fileInput.value = "";
+});
+async function uploadImageToRemoteServer(file) {
+  console.log("📤 Starte Upload für:", file?.name);
+
+  const formData = new FormData();
+  formData.append("filedata", file); // 👈 laut Anleitung
+
+  const response = await fetch("http://localhost:7077/api/upload", {
+    method: "POST",
+    body: formData,
   });
+
+  if (!response.ok) {
+    console.error("❌ Upload fehlgeschlagen:", response.status, response.statusText);
+    throw new Error("Upload fehlgeschlagen");
+  }
+
+  const result = await response.json();
+  console.log("🧪 Upload-Serverantwort:", result);
+
+  // 📦 Hole ersten String-Wert aus dem data-Objekt (z. B. "content/img/...")
+  const uploadedPath = Object.values(result?.data || {}).find(
+    (v) => typeof v === "string" && v.includes("content/img/")
+  );
+
+  if (!uploadedPath) {
+    throw new Error("❌ Kein gültiger Pfad vom Server erhalten!");
+  }
+
+  const fullUrl = `http://localhost:7077/${uploadedPath}`;
+  console.log("📤 Bild erreichbar unter:", fullUrl);
+
+  return fullUrl;
+}
+
+
+
 
   // ❌ Edit abbrechen
   document.getElementById("cancel-edit").addEventListener("click", () => {
@@ -296,13 +372,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    let newSrc = "";
-    if (fileInput && fileInput.files.length > 0) {
-      const filename = await saveImageToDirectory(fileInput.files[0]);
-      newSrc = filename;
-    } else {
-      newSrc = newSrcInput;
-    }
+      // Ursprünglicher Speicherort (aus verstecktem Feld oder disabled select)
+      const originalStorage = document.getElementById("edit-storage-type")?.value || "remote";
+      let newSrc = "";
+
+      if (fileInput && fileInput.files.length > 0) {
+        if (originalStorage === "local") {
+          const filename = await saveImageToDirectory(fileInput.files[0]); // Lokale Speicherung
+          newSrc = filename;
+        } else {
+          alert("Dieses Medium wurde ursprünglich als URL gespeichert. Bitte gib eine neue URL ein.");
+          return;
+        }
+      } else {
+        newSrc = newSrcInput;
+      }
 
     const db = await openMediaDB();
     const tx = db.transaction("mediaItems", "readwrite");
@@ -344,6 +428,23 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("detail-view").classList.add("hidden");
     document.querySelector(".song-list").classList.remove("hidden");
   });
+  
+
+document.getElementById("toggle-storage-filter").addEventListener("click", () => {
+  if (storageFilterMode === "all") {
+    storageFilterMode = "local";
+    document.getElementById("toggle-storage-filter").textContent = "📁 Lokal";
+  } else if (storageFilterMode === "local") {
+    storageFilterMode = "remote";
+    document.getElementById("toggle-storage-filter").textContent = "🌐 Remote";
+  } else {
+    storageFilterMode = "all";
+    document.getElementById("toggle-storage-filter").textContent = "📦 Alle";
+  }
+
+  loadSongsFromDB(); // neu filtern
+});
+
 });
 
 
