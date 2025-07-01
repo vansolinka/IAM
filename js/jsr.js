@@ -1,4 +1,6 @@
 let storageFilterMode = "all"; // Mögliche Werte: all, local, remote
+let pendingDeleteId = null;
+
 // 📦 IndexedDB Setup & Zugriffsfunktionen
 function openMediaDB() {
   return new Promise((resolve, reject) => {
@@ -266,15 +268,68 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-  // ❌ Abbrechen Hinzufügen
-  document.getElementById("add-cancel").addEventListener("click", () => closeAddPopup());
+// ❌ Abbrechen Hinzufügen
+document.getElementById("add-cancel").addEventListener("click", () => closeAddPopup());
 
-  // ✨ Overlay Klick → alles schließen
-  document.getElementById("overlay").addEventListener("click", () => {
-    closeAddPopup();
+// 🔙 Detailansicht schließen
+function closeDetailView() {
+  document.getElementById("detail-view").classList.add("hidden");
+  document.querySelector(".song-list").classList.remove("hidden");
+}
+
+// 🗑️ Detailansicht Löschen
+document.getElementById("detail-delete").addEventListener("click", () => {
+  closeActionMenu();
+  const detailDelete = document.getElementById("detail-delete");
+  pendingDeleteId = Number(detailDelete.dataset.id);
+  const title = document.getElementById("detail-title").textContent;
+
+  document.getElementById("delete-item-title").textContent = `"${title}"`;
+  document.getElementById("delete-dialog").classList.remove("dialog-hidden");
+  document.getElementById("overlay").classList.add("visible");
+});
+
+// 🗑️ Action-Menü Löschen
+document.getElementById("action-delete").addEventListener("click", () => {
+  closeActionMenu();
+  const menu = document.getElementById("action-menu");
+  pendingDeleteId = Number(menu.dataset.id);
+  const title = menu.dataset.title;
+
+  document.getElementById("delete-item-title").textContent = `"${title}"`;
+  document.getElementById("delete-dialog").classList.remove("dialog-hidden");
+  document.getElementById("overlay").classList.add("visible");
+});
+
+// ❌ Löschen abbrechen
+document.getElementById("cancel-delete").addEventListener("click", () => {
+  pendingDeleteId = null;
+  document.getElementById("delete-dialog").classList.add("dialog-hidden"); // verstecken
+  document.getElementById("overlay").classList.remove("visible"); // verstecken
+});
+
+// ✅ Löschen bestätigen
+document.getElementById("confirm-delete").addEventListener("click", async () => {
+  if (pendingDeleteId != null) {
+    await deleteMediaItemFromDB(pendingDeleteId);
+    pendingDeleteId = null;
     closeActionMenu();
-    resetEditForm();
-  });
+    closeDetailView();
+    loadSongsFromDB();
+  }
+
+  document.getElementById("delete-dialog").classList.add("dialog-hidden"); // verstecken
+  document.getElementById("overlay").classList.remove("visible"); // verstecken
+});
+
+// ✨ Overlay Klick → alles schließen
+document.getElementById("overlay").addEventListener("click", () => {
+  closeAddPopup();
+  closeActionMenu();
+  resetEditForm();
+  document.getElementById("delete-dialog").classList.add("dialog-hidden"); // sicherheitshalber
+});
+
 
   // ✏️ Edit starten
 document.getElementById("action-edit").addEventListener("click", () => {
@@ -415,13 +470,13 @@ async function uploadImageToRemoteServer(file) {
   });
 
   // 🗑️ Löschen
-  document.getElementById("action-delete").addEventListener("click", () => {
-    const id = Number(document.getElementById("action-menu").dataset.id);
-    deleteMediaItemFromDB(id).then(() => {
-      closeActionMenu();
-      loadSongsFromDB();
-    });
-  });
+//document.getElementById("action-delete").addEventListener("click", () => {
+//    const id = Number(document.getElementById("action-menu").dataset.id);
+ //   deleteMediaItemFromDB(id).then(() => {
+  //    closeActionMenu();
+  //    loadSongsFromDB();
+  //  });
+ // });
 
   // 🔙 Zurück aus Detailansicht
   document.getElementById("detail-back")?.addEventListener("click", () => {
