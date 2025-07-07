@@ -208,35 +208,54 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("add-popup").classList.add("visible");
     document.getElementById("overlay").classList.add("visible");
   });
+async function extractGeoLocationFromImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      // Hier könntest du später echte EXIF-GPS-Daten lesen
+      // Für jetzt einfach zurückgeben: null (kein GPS)
+      resolve(null);
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
 
-  // 💾 Hinzufügen bestätigen
-  document.getElementById("add-confirm").addEventListener("click", async () => {
-    console.log("📦 Speicherort gewählt:", document.getElementById("add-storage-type").value);
+// 💾 Hinzufügen bestätigen
+document.getElementById("add-confirm").addEventListener("click", async () => {
+  console.log("📦 Speicherort gewählt:", document.getElementById("add-storage-type").value);
 
+  // 📌 Eingabefelder auslesen
   const title = document.getElementById("add-title").value.trim();
   const urlInput = document.getElementById("add-src").value.trim();
   const fileInput = document.getElementById("add-file");
   const storageType = document.getElementById("add-storage-type").value;
 
+  // ❗ Validierung: Titel erforderlich
   if (!title) {
     alert("Bitte gib einen Titel ein.");
     return;
   }
 
+  // ❗ Validierung: entweder Datei oder URL muss vorhanden sein
   if ((!fileInput || fileInput.files.length === 0) && !urlInput) {
     alert("Bitte gib eine Bild-URL ein oder lade eine Bilddatei hoch.");
     return;
   }
 
-  let src = "";
-
+  let src = "";           // Bildpfad oder URL
+  let location = null;    // 📍 Standortdaten (optional)
 
   // 📁 Datei wurde hochgeladen
   if (fileInput && fileInput.files.length > 0) {
     const file = fileInput.files[0];
 
+    // 📍 (Optional) Standortdaten aus EXIF ermitteln – kann später eingefügt werden
+    // location = await extractGeoLocationFromImage(file);
+
     if (storageType === "local") {
       console.log("📁 Lokale Speicherung wird versucht...");
+
+      // Bild im lokalen Verzeichnis speichern
       const filename = await window.saveImageToFolder(
         file,
         crypto.randomUUID() + "-" + file.name
@@ -245,6 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (storageType === "remote") {
       console.log("🌐 Remote-Upload wird versucht...");
       try {
+        // Bild zu externem Server hochladen
         src = await uploadImageToRemoteServer(file);
       } catch (err) {
         alert("❌ Fehler beim Hochladen: " + err.message);
@@ -252,20 +272,37 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   } else {
-    // 🌐 Nur URL wurde eingegeben
+    // 🌐 Nur URL wurde eingegeben → keine Datei nötig
     console.log("🌐 Nur URL wird verwendet, kein Upload nötig.");
     src = urlInput;
   }
 
+  // 📍 Wenn keine Standortdaten vorhanden → Default auf Berlin setzen
+  if (!location) {
+    location = { lat: 52.52, lng: 13.405 }; // fallback
+  }
+
+  // 📅 Aktuelles Datum im Format TT.MM.JJJJ
   const heute = new Date();
   const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
-  const newItem = { title, owner: storageType, added: datum, numOfTags: 0, src };
 
+  // 🧱 Neues Medienobjekt erstellen
+  const newItem = {
+    title,
+    owner: storageType,
+    added: datum,
+    numOfTags: 0,
+    src,
+    location // 📍 wird gespeichert für Kartenansicht
+  };
+
+  // ✅ In IndexedDB speichern und UI aktualisieren
   addMediaItemToDB(newItem).then(() => {
-    loadSongsFromDB();
-    closeAddPopup();
+    loadSongsFromDB();   // Medienliste aktualisieren
+    closeAddPopup();     // Popup schließen
   });
 });
+
 
 
 // ❌ Abbrechen Hinzufügen
@@ -568,3 +605,62 @@ function resetEditForm() {
 }
 
 
+function openNav() {
+  document.getElementById("mySidenav").style.width = "240px";
+}
+
+function closeNav() {
+  document.getElementById("mySidenav").style.width = "0";
+}
+
+
+let mapInstance = null;
+
+function showListView() {
+  document.querySelector('.song-list').classList.remove('hidden');
+  document.querySelector('#map-view').classList.add('hidden');
+}
+
+function showMapView() {
+  document.querySelector('.song-list').classList.add('hidden');
+  document.querySelector('#map-view').classList.remove('hidden');
+
+  // Nur einmal initialisieren
+  if (!mapInstance) {
+    mapInstance = L.map('map-view').setView([52.52, 13.405], 13); // z. B. Berlin
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+    }).addTo(mapInstance);
+
+    L.marker([52.52, 13.405]).addTo(mapInstance)
+      .bindPopup('Du bist hier.')
+      .openPopup();
+  } else {
+    setTimeout(() => mapInstance.invalidateSize(), 200); // wichtig beim wieder Anzeigen
+  }
+}
+
+// Klick-Event auf Sidebar-Links
+document.querySelectorAll('#mySidenav a[data-view]').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const view = link.getAttribute('data-view');
+    closeNav();
+
+    if (view === 'grid') {
+      showMapView();
+    } else if (view === 'list') {
+      showListView();
+    }
+  });
+});
+
+function goToHome() {
+  closeNav(); // Menü schließen
+
+  // Nach kurzem Timeout zur Startseite navigieren
+  setTimeout(() => {
+    window.location.href = "htm.html"; // oder "index.html"
+  }, 300); // 300ms passt zum .sidenav transition
+}

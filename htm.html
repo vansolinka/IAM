@@ -7,6 +7,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>IAM Greenfield</title>
   <link rel="stylesheet" href="css/css.css" />
+  <!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
 </head>
 <body>
   <div class="app-container view-grid">
@@ -14,12 +18,12 @@
     <!-- Mobile Navigation Header -->
     <header class="mobile-header">
       <div class="left-group">
-        <div class="hamburger"></div>
+        <div class="hamburger" onclick="openNav()"></div>
         <div class="medien">Medien</div>
       </div>
 
       <div class="right-group">
-        <button class="tile" aria-label="Change grid"></button>
+        <div class="tile" aria-label="Change grid"></div>
         <div class="add" id="add-button" title="Neues Medium hinzufügen"></div>
       </div>
     </header>
@@ -27,6 +31,7 @@
     <main class="song-list">
       <div class="song-top-spacer"></div>
     </main>
+    <div id="map-view" class="hidden"></div>
 
     <!-- Overlay -->
     <div id="overlay" class="hidden"></div>
@@ -159,11 +164,22 @@
       <div class="right-group"></div>
     </footer>
   </div>
+<!-- Seitenmenü -->
+<div id="mySidenav" class="sidenav">
+  <a href="" onclick="goToHome()">📄 Medien</a>
+  <a href="#" data-view="grid">🗺️ Karte</a>
+</div>
 
   <!-- JavaScript-Dateien -->
   <script src="js/jsl.js"></script>
   <script src="js/jsr.js"></script>
   <script src="js/lib/xhr.js"></script>
   <script src="js/fs-image-storage.js"></script>
+  <!-- Leaflet JS -->
+ <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+
 </body>
 </html>

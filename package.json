@@ -1,0 +1,23 @@
+{
+  "name": "iam",
+  "version": "1.0.0",
+  "description": "For educational use only. Also see LICENSE file.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vansolinka/IAM.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vansolinka/IAM/issues"
+  },
+  "homepage": "https://github.com/vansolinka/IAM#readme",
+  "dependencies": {
+    "vfh-iam-mwf-base": "^0.1.2"
+  }
+}
