@@ -1,5 +1,24 @@
 let storageFilterMode = "all"; // Mögliche Werte: all, local, remote
 let pendingDeleteId = null;
+let src = "";           // Bildpfad oder URL
+// 📁 Initialisiere IndexedDB und erstelle "mediaItems", falls noch nicht vorhanden
+const dbRequest = indexedDB.open("MediaDB", 1);
+
+dbRequest.onupgradeneeded = function (event) {
+  const db = event.target.result;
+  if (!db.objectStoreNames.contains("mediaItems")) {
+    db.createObjectStore("mediaItems", { keyPath: "id", autoIncrement: true });
+    console.log("✅ Objektstore 'mediaItems' wurde erstellt");
+  }
+};
+
+dbRequest.onerror = function () {
+  console.error("❌ Fehler beim Öffnen der IndexedDB");
+};
+
+dbRequest.onsuccess = function () {
+  console.log("📦 IndexedDB verbunden");
+};
 
 // 📦 IndexedDB Setup & Zugriffsfunktionen
 function openMediaDB() {
@@ -31,15 +50,35 @@ async function addMediaItemToDB(item) {
   const db = await openMediaDB();
   const tx = db.transaction("mediaItems", "readwrite");
   const store = tx.objectStore("mediaItems");
-  store.add(item);
-  return tx.complete;
+
+  return new Promise((resolve, reject) => {
+    const request = store.add(item);
+
+    request.onsuccess = (event) => {
+      // 🧠 ID wird automatisch gesetzt – wir fügen sie zurück ins Objekt ein
+      item.id = event.target.result;
+      console.log("✅ Gespeichert mit ID:", item.id);
+      resolve(item);
+    };
+
+    request.onerror = (e) => {
+      console.error("❌ Fehler beim Hinzufügen:", e.target.error);
+      reject("Fehler beim Hinzufügen in DB");
+    };
+  });
 }
+
 
 async function deleteMediaItemFromDB(id) {
   if (!Number.isInteger(id)) {
     console.error("❌ Ungültige ID übergeben an deleteMediaItemFromDB:", id);
     return;
   }
+  // Wenn die Karte gerade aktiv ist, aktualisiere sie
+if (!document.getElementById("map-view").classList.contains("hidden")) {
+  await renderMediaItemMarkers();
+}
+
 
   const db = await openMediaDB();
   const tx = db.transaction("mediaItems", "readwrite");
@@ -209,20 +248,36 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("overlay").classList.add("visible");
   });
 async function extractGeoLocationFromImage(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = function (event) {
-      // Hier könntest du später echte EXIF-GPS-Daten lesen
-      // Für jetzt einfach zurückgeben: null (kein GPS)
-      resolve(null);
-    };
-    reader.readAsArrayBuffer(file);
-  });
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const tags = ExifReader.load(arrayBuffer);
+
+    if (tags["GPSLatitude"] && tags["GPSLongitude"]) {
+      const toDecimal = (arr, ref) =>
+        (arr[0].numerator / arr[0].denominator) +
+        (arr[1].numerator / arr[1].denominator) / 60 +
+        (arr[2].numerator / arr[2].denominator) / 3600 * (ref === "S" || ref === "W" ? -1 : 1);
+
+      const lat = toDecimal(tags["GPSLatitude"].description, tags["GPSLatitudeRef"].description);
+      const lng = toDecimal(tags["GPSLongitude"].description, tags["GPSLongitudeRef"].description);
+
+      return { lat, lng };
+    }
+  } catch (e) {
+    console.warn("EXIF-Standortdaten konnten nicht gelesen werden:", e);
+  }
+
+  return null; // fallback
 }
+
 
 // 💾 Hinzufügen bestätigen
 document.getElementById("add-confirm").addEventListener("click", async () => {
+  
+let location = null;    // 📍 Standortdaten (optional)
   console.log("📦 Speicherort gewählt:", document.getElementById("add-storage-type").value);
+  console.log("🧭 Standort, der gespeichert wird:", location);
+
 
   // 📌 Eingabefelder auslesen
   const title = document.getElementById("add-title").value.trim();
@@ -242,15 +297,14 @@ document.getElementById("add-confirm").addEventListener("click", async () => {
     return;
   }
 
-  let src = "";           // Bildpfad oder URL
-  let location = null;    // 📍 Standortdaten (optional)
+
 
   // 📁 Datei wurde hochgeladen
   if (fileInput && fileInput.files.length > 0) {
     const file = fileInput.files[0];
 
     // 📍 (Optional) Standortdaten aus EXIF ermitteln – kann später eingefügt werden
-    // location = await extractGeoLocationFromImage(file);
+     location = await extractGeoLocationFromImage(file);
 
     if (storageType === "local") {
       console.log("📁 Lokale Speicherung wird versucht...");
@@ -285,6 +339,7 @@ document.getElementById("add-confirm").addEventListener("click", async () => {
   // 📅 Aktuelles Datum im Format TT.MM.JJJJ
   const heute = new Date();
   const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
+console.log("📍 Standort vor dem Speichern:", location);
 
   // 🧱 Neues Medienobjekt erstellen
   const newItem = {
@@ -297,10 +352,14 @@ document.getElementById("add-confirm").addEventListener("click", async () => {
   };
 
   // ✅ In IndexedDB speichern und UI aktualisieren
-  addMediaItemToDB(newItem).then(() => {
-    loadSongsFromDB();   // Medienliste aktualisieren
-    closeAddPopup();     // Popup schließen
-  });
+    addMediaItemToDB(newItem).then(() => {
+      loadSongsFromDB(); // Liste aktualisieren
+      if (!document.getElementById("map-view").classList.contains("hidden")) {
+        renderMediaItemMarkers(); // Falls Karte sichtbar → Marker neu zeichnen
+      }
+      closeAddPopup(); // Popup schließen
+    });
+
 });
 
 
@@ -350,14 +409,26 @@ document.getElementById("confirm-delete").addEventListener("click", async () => 
   if (pendingDeleteId != null) {
     await deleteMediaItemFromDB(pendingDeleteId);
     pendingDeleteId = null;
+
     closeActionMenu();
     closeDetailView();
-    loadSongsFromDB();
+
+    // 📄 Liste aktualisieren, wenn sichtbar
+    if (!document.querySelector(".song-list").classList.contains("hidden")) {
+      await loadSongsFromDB();
+    }
+
+    // 🗺️ Marker neu zeichnen, wenn Karte sichtbar
+    if (!document.getElementById("map-view").classList.contains("hidden")) {
+      await renderMediaItemMarkers();
+    }
   }
 
   document.getElementById("delete-dialog").classList.add("dialog-hidden"); // verstecken
   document.getElementById("overlay").classList.remove("visible"); // verstecken
 });
+
+
 
 // ✨ Overlay Klick → alles schließen
 document.getElementById("overlay").addEventListener("click", () => {
@@ -516,10 +587,18 @@ async function uploadImageToRemoteServer(file) {
  // });
 
   // 🔙 Zurück aus Detailansicht
-  document.getElementById("detail-back")?.addEventListener("click", () => {
-    document.getElementById("detail-view").classList.add("hidden");
+document.getElementById("detail-back")?.addEventListener("click", () => {
+  document.getElementById("detail-view").classList.add("hidden");
+
+  if (cameFromMapView) {
+    showMapView();
+  } else {
     document.querySelector(".song-list").classList.remove("hidden");
-  });
+  }
+
+  cameFromMapView = false; // zurücksetzen
+});
+
   
 
 document.getElementById("toggle-storage-filter").addEventListener("click", () => {
@@ -615,31 +694,110 @@ function closeNav() {
 
 
 let mapInstance = null;
+let mediaMarkerGroup = null;
 
-function showListView() {
-  document.querySelector('.song-list').classList.remove('hidden');
-  document.querySelector('#map-view').classList.add('hidden');
-}
 
 function showMapView() {
-  document.querySelector('.song-list').classList.add('hidden');
-  document.querySelector('#map-view').classList.remove('hidden');
+  document.querySelector(".song-list")?.classList.add("hidden");
+  document.getElementById("detail-view")?.classList.add("hidden");
+  document.getElementById("map-view")?.classList.remove("hidden");
 
-  // Nur einmal initialisieren
+  // 💡 WICHTIG: Nur 1 Ansicht darf sichtbar sein
+  document.getElementById("map-view").style.display = "block";
+  document.querySelector(".song-list").style.display = "none";
+  document.getElementById("detail-view").style.display = "none";
+
   if (!mapInstance) {
-    mapInstance = L.map('map-view').setView([52.52, 13.405], 13); // z. B. Berlin
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
+    mapInstance = L.map("map-view").setView([52.52, 13.405], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
     }).addTo(mapInstance);
-
-    L.marker([52.52, 13.405]).addTo(mapInstance)
-      .bindPopup('Du bist hier.')
-      .openPopup();
+    mediaMarkerGroup = L.layerGroup().addTo(mapInstance);
   } else {
-    setTimeout(() => mapInstance.invalidateSize(), 200); // wichtig beim wieder Anzeigen
+    setTimeout(() => mapInstance.invalidateSize(), 200);
   }
+
+    renderMediaItemMarkers();
+
+  // 🧭 Nur einmal registrieren!
+  if (!mapInstance._hasPopupOpenHandler) {
+    mapInstance.on("popupopen", (e) => {
+      const button = e.popup._contentNode.querySelector(".marker-detail-button");
+      if (button) {
+        button.addEventListener("click", () => {
+        const id = button.dataset.id;
+          if (id) {
+            showDetailView(id); // zeigt Detailansicht für dieses MediaItem
+          }
+        });
+      }
+    });
+    mapInstance._hasPopupOpenHandler = true;
+  }
+
 }
+async function renderMediaItemMarkers() {
+  if (!mediaMarkerGroup) return;
+
+  mediaMarkerGroup.clearLayers();
+  const items = await loadMediaItemsFromDB();
+
+  const uniqueLocations = new Set();
+
+  items.forEach((item) => {
+    if (!item.location || !item.location.lat || !item.location.lng) return;
+
+    const { lat, lng } = item.location;
+    const key = `${lat.toFixed(5)}_${lng.toFixed(5)}`;
+
+    if (uniqueLocations.has(key)) return;
+    uniqueLocations.add(key);
+
+    const marker = L.marker([lat, lng]).addTo(mediaMarkerGroup);
+
+    const popupHtml = `
+      <div>
+        <strong>${item.title}</strong><br />
+        <button class="marker-detail-button" data-id="${item.id}">📄 Details</button>
+      </div>
+    `;
+    marker.bindPopup(popupHtml);
+
+    // 🧠 Event registrieren, wenn Popup geöffnet wird
+    marker.on("popupopen", () => {
+      const button = document.querySelector(".marker-detail-button");
+      if (button) {
+        button.addEventListener("click", () => {
+          showDetailView(item.id); 
+        });
+      }
+    });
+  });
+}
+
+
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("marker-detail-button")) {
+    const id = Number(e.target.dataset.id);
+    const items = await loadMediaItemsFromDB();
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+
+    // Karte & Liste ausblenden, Detailansicht anzeigen
+    document.querySelector(".song-list").classList.add("hidden");
+    document.querySelector("#map-view").classList.add("hidden");
+
+    const detailView = document.getElementById("detail-view");
+    detailView.classList.remove("hidden");
+
+    document.getElementById("detail-title").textContent = item.title;
+    document.getElementById("detail-image").src = item.src;
+    document.getElementById("detail-delete").dataset.id = item.id;
+
+    detailView.classList.add("fade-in");
+  }
+});
+
 
 // Klick-Event auf Sidebar-Links
 document.querySelectorAll('#mySidenav a[data-view]').forEach(link => {
@@ -655,12 +813,89 @@ document.querySelectorAll('#mySidenav a[data-view]').forEach(link => {
     }
   });
 });
+function showListView() {
+  document.querySelector(".song-list")?.classList.remove("hidden");
+  document.getElementById("map-view")?.classList.add("hidden");
+  document.getElementById("detail-view")?.classList.add("hidden");
 
+  // 💡 Nur song-list sichtbar
+  document.querySelector(".song-list").style.display = "flex";
+  document.getElementById("map-view").style.display = "none";
+  document.getElementById("detail-view").style.display = "none";
+
+  loadSongsFromDB();
+}
 function goToHome() {
   closeNav(); // Menü schließen
-
-  // Nach kurzem Timeout zur Startseite navigieren
-  setTimeout(() => {
-    window.location.href = "htm.html"; // oder "index.html"
-  }, 300); // 300ms passt zum .sidenav transition
 }
+
+async function showDetailView(id) {
+  const item = await getMediaItemFromDB(id);
+  if (!item) return;
+
+  const detailView = document.getElementById("detail-view");
+  const detailTitle = document.getElementById("detail-title");
+  const detailImage = document.getElementById("detail-image");
+  const detailDelete = document.getElementById("detail-delete");
+
+  detailTitle.textContent = item.title || "Unbenannt";
+  detailImage.src = item.src || "";
+  detailDelete.dataset.id = item.id;
+
+  document.getElementById("map-view").classList.add("hidden");
+  document.querySelector(".song-list").classList.add("hidden");
+  detailView.classList.remove("hidden");
+  detailView.style.display = "flex";
+
+  // 🧠 Wichtig für Delete
+  pendingDeleteId = Number(item.id);
+
+  // EventHandler setzen für Dialog-Anzeige
+  detailDelete.onclick = () => {
+    document.getElementById("delete-item-title").textContent = `"${item.title}"`;
+    document.getElementById("delete-dialog").classList.remove("dialog-hidden");
+    document.getElementById("overlay").classList.add("visible");
+  };
+
+  console.log("✅ Detailansicht geöffnet für:", item.title, "| ID:", item.id);
+}
+
+
+
+function getMediaItemFromDB(id) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("MediaDB", 1); 
+
+    request.onerror = () => reject("❌ DB-Fehler beim Öffnen");
+
+    request.onsuccess = () => {
+      const db = request.result;
+
+      // 👉 Stelle sicher, dass der Store existiert
+      if (!db.objectStoreNames.contains("mediaItems")) {
+        console.error("❌ mediaItems store nicht gefunden.");
+        reject("❌ mediaItems store nicht gefunden.");
+        return;
+      }
+
+      try {
+        const tx = db.transaction("mediaItems", "readonly");
+        const store = tx.objectStore("mediaItems");
+        const parsedId = Number(id);
+        if (!Number.isInteger(parsedId)) {
+          console.error("❌ Ungültige ID übergeben:", id);
+          reject("Ungültige ID.");
+          return;
+        }
+        const getRequest = store.get(parsedId);
+
+        getRequest.onsuccess = () => resolve(getRequest.result);
+        getRequest.onerror = () => reject("Fehler beim Lesen des MediaItem");
+      } catch (err) {
+        reject("❌ Fehler beim Zugriff auf Store: " + err.message);
+      }
+    };
+  });
+}
+
+
