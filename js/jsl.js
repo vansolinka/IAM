@@ -58,7 +58,7 @@ document.getElementById('detail-delete')?.addEventListener('click', () => {
   });
 });
 
-// 🆕 Nach dem Laden der Songs: Interaktion aktivieren und Bild über File System API laden
+//Nach dem Laden der Songs: Interaktion aktivieren und Bild über File System API laden
 document.addEventListener("songsLoaded", async () => {
   const songBoxes = document.querySelectorAll(".song-box");
 

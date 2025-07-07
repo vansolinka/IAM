@@ -1,4 +1,4 @@
-// 📁 Globale Referenz auf Bild-Ordner (File System API)
+//Globale Referenz auf Bild-Ordner (File System API)
 let directoryHandle = null;
 
 async function getOrRequestImageDirectory() {
@@ -28,7 +28,7 @@ async function getImageUrlFromDirectory(filename) {
   return URL.createObjectURL(file);
 }
 
-// 📆 MediaItem-Rendering
+//MediaItem-Rendering
 function renderImage(src, targetImgOrDiv, fallback = "img/png/image_not_supported.png") {
   if (src.startsWith("http")) {
     if (targetImgOrDiv.tagName === "IMG") {

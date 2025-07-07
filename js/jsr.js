@@ -1,7 +1,7 @@
 let storageFilterMode = "all"; // Mögliche Werte: all, local, remote
 let pendingDeleteId = null;
 let src = "";           // Bildpfad oder URL
-// 📁 Initialisiere IndexedDB und erstelle "mediaItems", falls noch nicht vorhanden
+// Initialisiere IndexedDB und erstelle "mediaItems", falls noch nicht vorhanden
 const dbRequest = indexedDB.open("MediaDB", 1);
 
 dbRequest.onupgradeneeded = function (event) {
@@ -20,7 +20,7 @@ dbRequest.onsuccess = function () {
   console.log("📦 IndexedDB verbunden");
 };
 
-// 📦 IndexedDB Setup & Zugriffsfunktionen
+//IndexedDB Setup & Zugriffsfunktionen
 function openMediaDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("MediaDB", 1);
@@ -88,7 +88,7 @@ if (!document.getElementById("map-view").classList.contains("hidden")) {
 }
 
 
-// 🧱 DOM-Erstellung für ein MediaItem
+//DOM-Erstellung für ein MediaItem
 async function createSongBox(item) {
   const box = document.createElement("div");
   box.classList.add("song-box");
@@ -195,14 +195,14 @@ if (item.src.startsWith("http")) {
 
 
 
-// 🔄 MediaItems laden & anzeigen
+//MediaItems laden & anzeigen
 async function loadSongsFromDB() {
   const songList = document.querySelector(".song-list");
   songList.innerHTML = "";
 
   const items = await loadMediaItemsFromDB();
 
-  // 🧠 Filter anwenden
+  //Filter anwenden
   const filtered = items.filter(item => {
     if (storageFilterMode === "local") return item.owner === "local";
     if (storageFilterMode === "remote") return item.owner === "remote";
@@ -218,7 +218,7 @@ async function loadSongsFromDB() {
 }
 
 
-// 🚀 DOM geladen
+//DOM geladen
 document.addEventListener("DOMContentLoaded", () => {
   // 📁 Ordner-Button für File System Access API
   const folderButton = document.getElementById("select-folder");
@@ -234,10 +234,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🔄 Reload-Button
+  //Reload-Button
   document.querySelector(".refresh")?.addEventListener("click", () => loadSongsFromDB());
 
-  // ➕ Hinzufügen-Button
+  //Hinzufügen-Button
   document.querySelector(".add")?.addEventListener("click", () => {
     document.getElementById("add-title").value = "";
     document.getElementById("add-src").value = "";
@@ -271,7 +271,7 @@ async function extractGeoLocationFromImage(file) {
 }
 
 
-// 💾 Hinzufügen bestätigen
+//Hinzufügen bestätigen
 document.getElementById("add-confirm").addEventListener("click", async () => {
   
 let location = null;    // 📍 Standortdaten (optional)
@@ -279,19 +279,19 @@ let location = null;    // 📍 Standortdaten (optional)
   console.log("🧭 Standort, der gespeichert wird:", location);
 
 
-  // 📌 Eingabefelder auslesen
+  //Eingabefelder auslesen
   const title = document.getElementById("add-title").value.trim();
   const urlInput = document.getElementById("add-src").value.trim();
   const fileInput = document.getElementById("add-file");
   const storageType = document.getElementById("add-storage-type").value;
 
-  // ❗ Validierung: Titel erforderlich
+  //Validierung: Titel erforderlich
   if (!title) {
     alert("Bitte gib einen Titel ein.");
     return;
   }
 
-  // ❗ Validierung: entweder Datei oder URL muss vorhanden sein
+  //Validierung: entweder Datei oder URL muss vorhanden sein
   if ((!fileInput || fileInput.files.length === 0) && !urlInput) {
     alert("Bitte gib eine Bild-URL ein oder lade eine Bilddatei hoch.");
     return;
@@ -299,11 +299,11 @@ let location = null;    // 📍 Standortdaten (optional)
 
 
 
-  // 📁 Datei wurde hochgeladen
+  //Datei wurde hochgeladen
   if (fileInput && fileInput.files.length > 0) {
     const file = fileInput.files[0];
 
-    // 📍 (Optional) Standortdaten aus EXIF ermitteln – kann später eingefügt werden
+    //(Optional) Standortdaten aus EXIF ermitteln – kann später eingefügt werden
      location = await extractGeoLocationFromImage(file);
 
     if (storageType === "local") {
@@ -326,22 +326,21 @@ let location = null;    // 📍 Standortdaten (optional)
       }
     }
   } else {
-    // 🌐 Nur URL wurde eingegeben → keine Datei nötig
+    //Nur URL wurde eingegeben → keine Datei nötig
     console.log("🌐 Nur URL wird verwendet, kein Upload nötig.");
     src = urlInput;
   }
-
-  // 📍 Wenn keine Standortdaten vorhanden → Default auf Berlin setzen
+  //Wenn keine Standortdaten vorhanden → Default auf Berlin setzen
   if (!location) {
     location = { lat: 52.52, lng: 13.405 }; // fallback
   }
 
-  // 📅 Aktuelles Datum im Format TT.MM.JJJJ
+  //Aktuelles Datum im Format TT.MM.JJJJ
   const heute = new Date();
   const datum = `${String(heute.getDate()).padStart(2, '0')}.${String(heute.getMonth() + 1).padStart(2, '0')}.${heute.getFullYear()}`;
 console.log("📍 Standort vor dem Speichern:", location);
 
-  // 🧱 Neues Medienobjekt erstellen
+  //Neues Medienobjekt erstellen
   const newItem = {
     title,
     owner: storageType,
@@ -351,7 +350,7 @@ console.log("📍 Standort vor dem Speichern:", location);
     location // 📍 wird gespeichert für Kartenansicht
   };
 
-  // ✅ In IndexedDB speichern und UI aktualisieren
+  //In IndexedDB speichern und UI aktualisieren
     addMediaItemToDB(newItem).then(() => {
       loadSongsFromDB(); // Liste aktualisieren
       if (!document.getElementById("map-view").classList.contains("hidden")) {
@@ -364,16 +363,16 @@ console.log("📍 Standort vor dem Speichern:", location);
 
 
 
-// ❌ Abbrechen Hinzufügen
+//Abbrechen Hinzufügen
 document.getElementById("add-cancel").addEventListener("click", () => closeAddPopup());
 
-// 🔙 Detailansicht schließen
+//Detailansicht schließen
 function closeDetailView() {
   document.getElementById("detail-view").classList.add("hidden");
   document.querySelector(".song-list").classList.remove("hidden");
 }
 
-// 🗑️ Detailansicht Löschen
+//Detailansicht Löschen
 document.getElementById("detail-delete").addEventListener("click", () => {
   closeActionMenu();
   const detailDelete = document.getElementById("detail-delete");
@@ -385,7 +384,7 @@ document.getElementById("detail-delete").addEventListener("click", () => {
   document.getElementById("overlay").classList.add("visible");
 });
 
-// 🗑️ Action-Menü Löschen
+//Action-Menü Löschen
 document.getElementById("action-delete").addEventListener("click", () => {
   closeActionMenu();
   const menu = document.getElementById("action-menu");
@@ -397,14 +396,14 @@ document.getElementById("action-delete").addEventListener("click", () => {
   document.getElementById("overlay").classList.add("visible");
 });
 
-// ❌ Löschen abbrechen
+//Löschen abbrechen
 document.getElementById("cancel-delete").addEventListener("click", () => {
   pendingDeleteId = null;
   document.getElementById("delete-dialog").classList.add("dialog-hidden"); // verstecken
   document.getElementById("overlay").classList.remove("visible"); // verstecken
 });
 
-// ✅ Löschen bestätigen
+//Löschen bestätigen
 document.getElementById("confirm-delete").addEventListener("click", async () => {
   if (pendingDeleteId != null) {
     await deleteMediaItemFromDB(pendingDeleteId);
@@ -413,12 +412,12 @@ document.getElementById("confirm-delete").addEventListener("click", async () => 
     closeActionMenu();
     closeDetailView();
 
-    // 📄 Liste aktualisieren, wenn sichtbar
+    //Liste aktualisieren, wenn sichtbar
     if (!document.querySelector(".song-list").classList.contains("hidden")) {
       await loadSongsFromDB();
     }
 
-    // 🗺️ Marker neu zeichnen, wenn Karte sichtbar
+    //Marker neu zeichnen, wenn Karte sichtbar
     if (!document.getElementById("map-view").classList.contains("hidden")) {
       await renderMediaItemMarkers();
     }
@@ -430,7 +429,7 @@ document.getElementById("confirm-delete").addEventListener("click", async () => 
 
 
 
-// ✨ Overlay Klick → alles schließen
+//Overlay Klick → alles schließen
 document.getElementById("overlay").addEventListener("click", () => {
   closeAddPopup();
   closeActionMenu();
@@ -439,7 +438,7 @@ document.getElementById("overlay").addEventListener("click", () => {
 });
 
 
-  // ✏️ Edit starten
+  //Edit starten
 document.getElementById("action-edit").addEventListener("click", () => {
   const menu = document.getElementById("action-menu");
   const editForm = menu.querySelector(".edit-form");
@@ -509,7 +508,7 @@ async function uploadImageToRemoteServer(file) {
 
 
 
-  // ❌ Edit abbrechen
+  //Edit abbrechen
   document.getElementById("cancel-edit").addEventListener("click", () => {
     const menu = document.getElementById("action-menu");
     menu.querySelector(".edit-form").classList.add("hidden");
@@ -517,7 +516,7 @@ async function uploadImageToRemoteServer(file) {
     resetEditForm();
   });
 
-  // 💾 Edit speichern
+  // Edit speichern
   document.getElementById("save-edit").addEventListener("click", async () => {
     const menu = document.getElementById("action-menu");
     const id = Number(menu.dataset.id);
@@ -577,7 +576,7 @@ async function uploadImageToRemoteServer(file) {
     };
   });
 
-  // 🗑️ Löschen
+  //Löschen
 //document.getElementById("action-delete").addEventListener("click", () => {
 //    const id = Number(document.getElementById("action-menu").dataset.id);
  //   deleteMediaItemFromDB(id).then(() => {
@@ -586,7 +585,7 @@ async function uploadImageToRemoteServer(file) {
   //  });
  // });
 
-  // 🔙 Zurück aus Detailansicht
+  //Zurück aus Detailansicht
 document.getElementById("detail-back")?.addEventListener("click", () => {
   document.getElementById("detail-view").classList.add("hidden");
 
@@ -619,7 +618,7 @@ document.getElementById("toggle-storage-filter").addEventListener("click", () =>
 });
 
 
-// 🔒 Popup schließen
+//Popup schließen
 function closeAddPopup() {
   document.getElementById("add-popup").classList.remove("visible");
   document.getElementById("overlay").classList.remove("visible");
@@ -702,7 +701,7 @@ function showMapView() {
   document.getElementById("detail-view")?.classList.add("hidden");
   document.getElementById("map-view")?.classList.remove("hidden");
 
-  // 💡 WICHTIG: Nur 1 Ansicht darf sichtbar sein
+
   document.getElementById("map-view").style.display = "block";
   document.querySelector(".song-list").style.display = "none";
   document.getElementById("detail-view").style.display = "none";
@@ -719,7 +718,7 @@ function showMapView() {
 
     renderMediaItemMarkers();
 
-  // 🧭 Nur einmal registrieren!
+  //Nur einmal registrieren!
   if (!mapInstance._hasPopupOpenHandler) {
     mapInstance.on("popupopen", (e) => {
       const button = e.popup._contentNode.querySelector(".marker-detail-button");
@@ -763,7 +762,7 @@ async function renderMediaItemMarkers() {
     `;
     marker.bindPopup(popupHtml);
 
-    // 🧠 Event registrieren, wenn Popup geöffnet wird
+    //Event registrieren, wenn Popup geöffnet wird
     marker.on("popupopen", () => {
       const button = document.querySelector(".marker-detail-button");
       if (button) {
@@ -818,7 +817,7 @@ function showListView() {
   document.getElementById("map-view")?.classList.add("hidden");
   document.getElementById("detail-view")?.classList.add("hidden");
 
-  // 💡 Nur song-list sichtbar
+  //Nur song-list sichtbar
   document.querySelector(".song-list").style.display = "flex";
   document.getElementById("map-view").style.display = "none";
   document.getElementById("detail-view").style.display = "none";
@@ -847,7 +846,7 @@ async function showDetailView(id) {
   detailView.classList.remove("hidden");
   detailView.style.display = "flex";
 
-  // 🧠 Wichtig für Delete
+  //Wichtig für Delete
   pendingDeleteId = Number(item.id);
 
   // EventHandler setzen für Dialog-Anzeige
@@ -871,7 +870,7 @@ function getMediaItemFromDB(id) {
     request.onsuccess = () => {
       const db = request.result;
 
-      // 👉 Stelle sicher, dass der Store existiert
+      //Stelle sicher, dass der Store existiert
       if (!db.objectStoreNames.contains("mediaItems")) {
         console.error("❌ mediaItems store nicht gefunden.");
         reject("❌ mediaItems store nicht gefunden.");
